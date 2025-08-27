@@ -293,34 +293,6 @@ Command line to run:
 mvn compile jib:build -X -DjibSerialize=true -Djib.to.auth.username=xxx -Djib.to.auth.password=xxxxx
 ```
 
-## Performance Testing
-
-To benchmark the scalability of the PetClinic REST API, a JMeter test plan is available.
-
-- See the [JMeter Performance Test](src/test/jmeter/README.md) for details.
-- Run the test using:
-  ```sh
-  jmeter -n -t src/test/jmeter/petclinic-jmeter-crud-benchmark.jmx \
-  -Jthreads=100 -Jduration=600 -Jops=2000 -Jramp_time=120 \
-  -l results/petclinic-test-results.jtl
-
-## API Testing with Postman + Newman
-
-This project contains **non-regression tests** for the Petclinic API, built with **Postman** and executed via **Newman**, with automated **HTML reports** for easy analysis.
-
-- See the [Postman + Newman Test](src/test/postman/README.md) for details.
-- You can run the tests with 2 ways:
-  I. Giving Execution Permission to the script file:
-    ```sh
-    chmod +x postman-tests.sh
-    ./postman-tests.sh
-    ```
-  II. Without Permission to the script file:
-    ```sh
-    zsh postman-tests.sh
-    ```
-> Note: You can use your currently bash installed. Like: "bash postman-tests.sh"
-
 ## Interesting Spring Petclinic forks
 
 The Spring Petclinic master branch in the main [spring-projects](https://github.com/spring-projects/spring-petclinic)
