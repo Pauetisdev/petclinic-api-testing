@@ -14,19 +14,17 @@
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
         <version>3.5.4</version>
-        <relativePath/> <!-- lookup parent from Maven repository -->
-    </parent>
+        <relativePath/> </parent>
 
     <properties>
+        <java.version>21</java.version>
 
-        <!-- Third-party libraries -->
         <spring-data-jdbc.version>1.2.1.RELEASE</spring-data-jdbc.version>
         <springdoc-openapi-ui.version>2.8.9</springdoc-openapi-ui.version>
         <jackson-databind-nullable.version>0.2.6</jackson-databind-nullable.version>
         <mapstruct.version>1.6.3</mapstruct.version>
         <jaxb-api.version>2.3.1</jaxb-api.version>
 
-        <!-- Maven plugins and supporting properties -->
         <maven.checkstyle-plugin.version>3.6.0</maven.checkstyle-plugin.version>
         <maven.exec-plugin.version>3.5.0</maven.exec-plugin.version>
         <maven.jacoco-plugin.version>0.8.13</maven.jacoco-plugin.version>
@@ -40,19 +38,17 @@
         <maven.site-plugin.version>3.21.0</maven.site-plugin.version>
         <maven.spotbugs-plugin.version>4.8.6.6</maven.spotbugs-plugin.version>
         <maven.version>3.9.9</maven.version>
+        <maven.versions-plugin.version>2.16.2</maven.versions-plugin.version>
 
-        <!-- Docker -->
         <docker.jib-maven-plugin.version>3.4.6</docker.jib-maven-plugin.version>
         <docker.image.prefix>springcommunity</docker.image.prefix>
 
-        <!-- SonarQube configuration -->
         <sonar.organization>spring-petclinic-rest</sonar.organization>
         <sonar.host.url>https://sonarcloud.io</sonar.host.url>
 
     </properties>
 
     <dependencies>
-        <!-- Spring Boot Dependencies all inherit from the spring-boot-starter-parent -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
@@ -87,7 +83,6 @@
         </dependency>
 
 
-        <!-- Data stores and supporting libs -->
         <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
@@ -120,7 +115,6 @@
             </exclusions>
         </dependency>
 
-        <!-- Test libs -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
@@ -137,7 +131,6 @@
             <scope>test</scope>
         </dependency>
 
-        <!-- JSON / XML / Serialization libs -->
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-core</artifactId>
@@ -214,6 +207,7 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>versions-maven-plugin</artifactId>
+                <version>${maven.versions-plugin.version}</version>
                 <reportSets>
                     <reportSet>
                         <reports>
@@ -228,7 +222,6 @@
                 <groupId>org.hjug.refactorfirst.plugin</groupId>
                 <artifactId>refactor-first-maven-plugin</artifactId>
                 <version>${maven.refactor-first-plugin.version}</version>
-                <!-- optional -->
                 <configuration>
                     <showDetails>true</showDetails>
                 </configuration>
@@ -255,8 +248,6 @@
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <executions>
                     <execution>
-                        <!-- Spring Boot Actuator displays build-related information
-                          if a META-INF/build-info.properties file is present -->
                         <goals>
                             <goal>build-info</goal>
                         </goals>
@@ -277,7 +268,6 @@
                 <version>${maven.jacoco-plugin.version}</version>
                 <configuration>
                     <excludes>
-                        <!-- Generated code -->
                         <exclude>**/org/springframework/samples/petclinic/rest/dto/**</exclude>
                         <exclude>**/org/springframework/samples/petclinic/rest/api/**</exclude>
                     </excludes>
@@ -321,8 +311,6 @@
                         </goals>
                         <configuration>
                             <formats>
-                                <!-- XML format for SonarCloud -->
-                                <!-- https://docs.sonarsource.com/sonarqube-cloud/enriching/test-coverage/java-test-coverage/ -->
                                 <format>XML</format>
                             </formats>
                         </configuration>
@@ -348,9 +336,7 @@
             <plugin>
                 <groupId>org.openapitools</groupId>
                 <artifactId>openapi-generator-maven-plugin</artifactId>
-                <!-- RELEASE_VERSION -->
                 <version>${maven.openapi-generator-plugin.version}</version>
-                <!-- /RELEASE_VERSION -->
                 <executions>
                     <execution>
                         <goals>
@@ -361,27 +347,18 @@
                             <generatorName>spring</generatorName>
                             <library>spring-boot</library>
 
-                            <!-- Only enabling model andopenapi-generator-maven-plugin API generation -->
                             <modelNameSuffix>Dto</modelNameSuffix>
                             <apiPackage>org.springframework.samples.petclinic.rest.api</apiPackage>
                             <generateModels>true</generateModels>
                             <modelPackage>org.springframework.samples.petclinic.rest.dto</modelPackage>
-                            <!--
-                            <generateSupportingFiles>true</generateSupportingFiles>
-                            <supportingFilesToGenerate>ApiUtil.java</supportingFilesToGenerate>
-                            -->
                             <generateApis>true</generateApis>
                             <configOptions>
-                                <!-- RestController implementation is provided by Petclinic developers -->
                                 <interfaceOnly>true</interfaceOnly>
-                                <!-- Activating Java 8 features -->
                                 <performBeanValidation>true</performBeanValidation>
                                 <dateLibrary>java8</dateLibrary>
                                 <useSpringBoot3>true</useSpringBoot3>
                                 <openApiNullable>false</openApiNullable>
-                                <!-- override the default library to jersey2 -->
                                 <serializationLibrary>jackson</serializationLibrary>
-                                <!-- switch documentation provider to springdoc -->
                                 <documentationProvider>springdoc</documentationProvider>
                             </configOptions>
                         </configuration>

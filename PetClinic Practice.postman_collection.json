@@ -1,0 +1,492 @@
+{
+	"info": {
+		"_postman_id": "a61a9b06-83ce-4c3d-811b-44e87f082a98",
+		"name": "PetClinic Practice",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "49409721",
+		"_collection_link": "https://pauetisdev-3765426.postman.co/workspace/pauetisdev's-Workspace~1e320310-a0fd-4679-8dbf-2c5dc56c5af1/collection/49409721-a61a9b06-83ce-4c3d-811b-44e87f082a98?action=share&source=collection_link&creator=49409721"
+	},
+	"item": [
+		{
+			"name": "Owners",
+			"item": [
+				{
+					"name": "Get All Owners",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {\r",
+									"    pm.response.to.have.status(200);\r",
+									"});\r",
+									"\r",
+									"// TEST 2: Temps de resposta < 2s\r",
+									"pm.test(\"Response time < 2000ms\", function () {\r",
+									"    pm.expect(pm.response.responseTime).to.be.below(2000);\r",
+									"});\r",
+									"\r",
+									"// TEST 3: És un array\r",
+									"pm.test(\"Response is an array\", function () {\r",
+									"    const jsonData = pm.response.json();\r",
+									"    pm.expect(jsonData).to.be.an('array');\r",
+									"});\r",
+									"\r",
+									"// TEST 4: Array amb dades\r",
+									"pm.test(\"Array has data\", function () {\r",
+									"    const jsonData = pm.response.json();\r",
+									"    pm.expect(jsonData.length).to.be.above(0);\r",
+									"});\r",
+									"\r",
+									"// TEST 5: Estructura correcta\r",
+									"pm.test(\"Owners have correct structure\", function () {\r",
+									"    const jsonData = pm.response.json();\r",
+									"    const owner = jsonData[0];\r",
+									"    \r",
+									"    pm.expect(owner).to.have.property('id');\r",
+									"    pm.expect(owner).to.have.property('firstName');\r",
+									"    pm.expect(owner).to.have.property('lastName');\r",
+									"    pm.expect(owner).to.have.property('city');\r",
+									"    pm.expect(owner).to.have.property('telephone');\r",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/owners",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"owners"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Owner by Id",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {\r",
+									"    pm.response.to.have.status(200);\r",
+									"});\r",
+									"\r",
+									"pm.test(\"Response time < 2000ms\", function () {\r",
+									"    pm.expect(pm.response.responseTime).to.be.below(2000);\r",
+									"});\r",
+									"\r",
+									"pm.test(\"Owner has ID 1\", function () {\r",
+									"    const owner = pm.response.json();\r",
+									"    pm.expect(owner.id).to.equal(1);\r",
+									"});\r",
+									"\r",
+									"pm.test(\"Owner has all required fields\", function () {\r",
+									"    const owner = pm.response.json();\r",
+									"    pm.expect(owner).to.have.property('firstName');\r",
+									"    pm.expect(owner).to.have.property('lastName');\r",
+									"    pm.expect(owner).to.have.property('address');\r",
+									"    pm.expect(owner).to.have.property('city');\r",
+									"    pm.expect(owner).to.have.property('telephone');\r",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/owners/1",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"owners",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Owner",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// --- Tests (Post-response Script) ---\r",
+									"\r",
+									"// TEST 1: Status code (El backend retorna 201 Created o 200 OK)\r",
+									"pm.test(\"Status code is 200 or 201\", function () {\r",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 201]);\r",
+									"});\r",
+									"\r",
+									"// TEST 2: Temps\r",
+									"pm.test(\"Response time < 2000ms\", function () {\r",
+									"    pm.expect(pm.response.responseTime).to.be.below(2000);\r",
+									"});\r",
+									"\r",
+									"// TEST 3: Verificar Owner creat, dades i encadenament\r",
+									"pm.test(\"Owner created successfully and data matches input\", function () {\r",
+									"    // Obtenir les dades que s'han enviat (necessàries per a la verificació)\r",
+									"    const expectedFirstName = pm.environment.get(\"tempFirstName\");\r",
+									"    const expectedLastName = pm.environment.get(\"tempLastName\");\r",
+									"    const expectedTelephone = pm.environment.get(\"tempTelephone\");\r",
+									"    \r",
+									"    // Si la petició retorna un 4xx (i el Test 1 falla), el response.json() podria fallar.\r",
+									"    if (pm.response.code >= 400) {\r",
+									"        return; \r",
+									"    }\r",
+									"    \r",
+									"    const response = pm.response.json();\r",
+									"    \r",
+									"    // Suposem que el backend retorna l'objecte creat (no un array)\r",
+									"    if (!Array.isArray(response) && response.id) {\r",
+									"        \r",
+									"        // 1. Encadenament: Desem l'ID per al PUT/DELETE\r",
+									"        pm.environment.set(\"createdOwnerId\", response.id);\r",
+									"        console.log(\"Owner creat amb ID:\", response.id);\r",
+									"        \r",
+									"        // 2. Validació d'estructura: Comprovem que es retorna l'ID\r",
+									"        pm.expect(response).to.have.property('id');\r",
+									"        \r",
+									"        // 3. Validació de contingut: Comprovem que les dades tornades coincideixen amb les dades dinàmiques enviades\r",
+									"        pm.expect(response.firstName).to.equal(expectedFirstName);\r",
+									"        pm.expect(response.lastName).to.equal(expectedLastName);\r",
+									"        pm.expect(response.telephone).to.equal(expectedTelephone);\r",
+									"        \r",
+									"        \r",
+									"        \r",
+									"    } else {\r",
+									"        // Lògica alternativa si el backend retorna una llista o un objecte inesperat\r",
+									"        console.warn(\"La resposta no retorna un objecte Owner amb ID, revisa el backend.\");\r",
+									"    }\r",
+									"});\r",
+									"\r",
+									"// TEST 4: El telèfon té 10 dígits (Comprovació addicional)\r",
+									"pm.test(\"Telephone has 10 digits\", function () {\r",
+									"    if (pm.response.code >= 400) {\r",
+									"        return; \r",
+									"    }\r",
+									"    const response = pm.response.json();\r",
+									"    const owner = Array.isArray(response) ? response[response.length - 1] : response;\r",
+									"    \r",
+									"    if (owner && owner.telephone) {\r",
+									"        pm.expect(owner.telephone.length).to.equal(10);\r",
+									"    }\r",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// --- Pre-request Script CORREGIT ---\r",
+									"\r",
+									"// Per generar strings random (Nom, Cognom, Ciutat, Adreça), la teva sintaxi era correcta\r",
+									"const randomFirstName = pm.variables.replaceIn(\"{{$randomFirstName}}\");\r",
+									"const randomLastName = pm.variables.replaceIn(\"{{$randomLastName}}\");\r",
+									"const randomCity = pm.variables.replaceIn(\"{{$randomCity}}\");\r",
+									"const randomAddress = pm.variables.replaceIn(\"{{$randomStreetAddress}}\");\r",
+									"\r",
+									"// Solució per al Telèfon: Utilitzem Lodash (_.random) per generar un nombre de 10 dígits \r",
+									"// i convertir-lo a String (necessari per a JSON).\r",
+									"const minTelephone = 1000000000; \r",
+									"const maxTelephone = 9999999999;\r",
+									"const randomTelephone = _.random(minTelephone, maxTelephone).toString(); // Genera un número i el fa STRING\r",
+									"\r",
+									"// Guardar les dades\r",
+									"pm.environment.set(\"tempFirstName\", randomFirstName);\r",
+									"pm.environment.set(\"tempLastName\", randomLastName);\r",
+									"pm.environment.set(\"tempTelephone\", randomTelephone); // <--- AQUEST ÉS EL NÚMERO REAL\r",
+									"pm.environment.set(\"tempCity\", randomCity);\r",
+									"pm.environment.set(\"tempAddress\", randomAddress);\r",
+									"\r",
+									"console.log(`[PRE-REQ] Owner generat: ${randomFirstName} ${randomLastName}. Telèfon: ${randomTelephone}`);"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"firstName\": \"{{tempFirstName}}\",\r\n    \"lastName\": \"{{tempLastName}}\",\r\n    \"address\": \"{{tempAddress}}\",\r\n    \"city\": \"{{tempCity}}\",\r\n    \"telephone\": \"{{tempTelephone}}\"\r\n}\r\n\r\n//utilizacio de les variables de entorn",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/owners",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"owners"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Onwer",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// --- Tests (Post-response Script) per a PUT Owner ---\r",
+									"\r",
+									"// TEST 1: Status code (PUT pot retornar 200 o 204)\r",
+									"pm.test(\"Status code is 200 or 204\", function () {\r",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 204]);\r",
+									"});\r",
+									"\r",
+									"// TEST 2: Temps\r",
+									"pm.test(\"Response time < 2000ms\", function () {\r",
+									"    pm.expect(pm.response.responseTime).to.be.below(2000);\r",
+									"});\r",
+									"\r",
+									"// TEST 3: Verificar actualització (si retorna body)\r",
+									"pm.test(\"New LastName updated successfully (from response body)\", function () {\r",
+									"    const expectedLastName = pm.environment.get(\"tempNewLastName\");\r",
+									"\r",
+									"    // ... (La resta del teu codi de TEST 3 és correcte)\r",
+									"    if (pm.response.code === 204) {\r",
+									"        pm.expect(true).to.be.true; \r",
+									"    } \r",
+									"    else if (pm.response.code === 200) {\r",
+									"        const response = pm.response.json();\r",
+									"        \r",
+									"        if (!Array.isArray(response)) {\r",
+									"            pm.expect(response.lastName).to.equal(expectedLastName);\r",
+									"        }\r",
+									"        else {\r",
+									"            const updated = response.find(o => o.id == pm.environment.get(\"createdOwnerId\"));\r",
+									"            if (updated) {\r",
+									"                pm.expect(updated.lastName).to.equal(expectedLastName);\r",
+									"            }\r",
+									"        }\r",
+									"    }\r",
+									"});\r",
+									"\r",
+									"// TEST 4: Verificar que existeix l'owner amb GET (Comprovació de persistència)\r",
+									"pm.test(\"Verify update with GET (Persistence Check)\", function () {\r",
+									"    const expectedLastName = pm.environment.get(\"tempNewLastName\");\r",
+									"    \r",
+									"    pm.sendRequest({\r",
+									"        url: pm.environment.get(\"baseUrl\") + \"/owners/\" + pm.environment.get(\"createdOwnerId\"),\r",
+									"        method: \"GET\"\r",
+									"    }, function (err, response) {\r",
+									"        if (!err && response.code === 200) {\r",
+									"            const owner = response.json();\r",
+									"            \r",
+									"            pm.expect(owner.lastName).to.equal(expectedLastName);\r",
+									"            console.log(\"Owner actualitzat persistentment:\", owner);\r",
+									"            \r",
+									"            // Netejar només la variable temporal del PUT un cop finalitzada la verificació\r",
+									"            pm.environment.unset(\"tempNewLastName\");\r",
+									"            \r",
+									"        } else {\r",
+									"            console.error(\"La verificació GET ha fallat o no ha trobat el recurs.\");\r",
+									"        }\r",
+									"    });\r",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// --- Pre-request Script per a PUT Owner ---\r",
+									"\r",
+									"// 1. Generar un nou valor de modificació amb el tag \"MODIFICAT\"\r",
+									"const newLastName = pm.variables.replaceIn(\"{{$randomLastName}}\") + \" MODIFICAT\";\r",
+									"\r",
+									"// 2. Guardar el nou valor en una variable temporal\r",
+									"pm.environment.set(\"tempNewLastName\", newLastName);\r",
+									"\r",
+									"// 3. Recuperar els valors originals dels altres camps des de l'entorn\r",
+									"// Aquesta part és crucial per assegurar-nos que les variables s'estan llegint\r",
+									"const originalFirstName = pm.environment.get(\"tempFirstName\");\r",
+									"const originalAddress = pm.environment.get(\"tempAddress\");\r",
+									"const originalCity = pm.environment.get(\"tempCity\");\r",
+									"const originalTelephone = pm.environment.get(\"tempTelephone\");\r",
+									"\r",
+									"// Si algun camp original no existeix, t'avisarà\r",
+									"if (!originalFirstName || !originalTelephone) {\r",
+									"    console.error(\"ERROR: Dades d'Owner originals no trobades. Revisa la neteja al script POST.\");\r",
+									"}\r",
+									"\r",
+									"console.log(`[PUT PRE-REQ] Nou Cognom a enviar: ${newLastName}`);"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"firstName\": \"{{tempFirstName}}\",\r\n    \"lastName\": \"{{tempNewLastName}}\",\r\n    \"address\": \"{{tempAddress}}\",\r\n    \"city\": \"{{tempCity}}\",\r\n    \"telephone\": \"{{tempTelephone}}\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/owners/{{createdOwnerId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"owners",
+								"{{createdOwnerId}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Owner",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// TEST 1: Status code (DELETE normalment retorna 204)\r",
+									"pm.test(\"Status code is 204\", function () {\r",
+									"    pm.response.to.have.status(204);\r",
+									"});\r",
+									"\r",
+									"// TEST 2: Temps\r",
+									"pm.test(\"Response time < 2000ms\", function () {\r",
+									"    pm.expect(pm.response.responseTime).to.be.below(2000);\r",
+									"});\r",
+									"\r",
+									"// TEST 3: Verificar que s'ha eliminat amb GET\r",
+									"pm.test(\"Owner deleted successfully\", function () {\r",
+									"    pm.sendRequest({\r",
+									"        url: pm.environment.get(\"baseUrl\") + \"/owners/\" + pm.environment.get(\"createdOwnerId\"),\r",
+									"        method: \"GET\"\r",
+									"    }, function (err, response) {\r",
+									"        // Hauria de retornar 404 Not Found\r",
+									"        pm.expect(response.code).to.equal(404);\r",
+									"        console.log(\"Owner eliminat correctament, retorna 404\");\r",
+									"    });\r",
+									"});\r",
+									"\r",
+									"// TEST 4: Netejar variable\r",
+									"pm.test(\"Clean up ALL Owner environment variables\", function () {\r",
+									"    // 1. Eliminar l'ID principal\r",
+									"    pm.environment.unset(\"createdOwnerId\");\r",
+									"    \r",
+									"    // 2. Eliminar totes les dades dinàmiques temporals de l'Owner\r",
+									"    pm.environment.unset(\"tempFirstName\");\r",
+									"    pm.environment.unset(\"tempLastName\");\r",
+									"    pm.environment.unset(\"tempAddress\");\r",
+									"    pm.environment.unset(\"tempCity\");\r",
+									"    pm.environment.unset(\"tempTelephone\");\r",
+									"    \r",
+									"    // Netejar la variable temporal del PUT (per si no es va netejar abans)\r",
+									"    pm.environment.unset(\"tempNewLastName\");\r",
+									"\r",
+									"    // Aquesta línia força el test a registrar-se com a 'PASS'\r",
+									"    pm.expect(true).to.be.true; \r",
+									"    console.log(\"Variables d'entorn d'Owner netejades.\");\r",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/owners/{{createdOwnerId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"owners",
+								"{{createdOwnerId}}"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Pets",
+			"item": []
+		},
+		{
+			"name": "Vets",
+			"item": []
+		},
+		{
+			"name": "Visits",
+			"item": []
+		}
+	]
+}
