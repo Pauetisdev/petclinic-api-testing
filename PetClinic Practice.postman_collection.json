@@ -208,8 +208,6 @@
 									"const randomCity = pm.variables.replaceIn(\"{{$randomCity}}\");\r",
 									"const randomAddress = pm.variables.replaceIn(\"{{$randomStreetAddress}}\");\r",
 									"\r",
-									"// Solució per al Telèfon: Utilitzem Lodash (_.random) per generar un nombre de 10 dígits \r",
-									"// i convertir-lo a String (necessari per a JSON).\r",
 									"const minTelephone = 1000000000; \r",
 									"const maxTelephone = 9999999999;\r",
 									"const randomTelephone = _.random(minTelephone, maxTelephone).toString(); // Genera un número i el fa STRING\r",
@@ -342,7 +340,6 @@
 									"pm.environment.set(\"tempNewLastName\", newLastName);\r",
 									"\r",
 									"// 3. Recuperar els valors originals dels altres camps des de l'entorn\r",
-									"// Aquesta part és crucial per assegurar-nos que les variables s'estan llegint\r",
 									"const originalFirstName = pm.environment.get(\"tempFirstName\");\r",
 									"const originalAddress = pm.environment.get(\"tempAddress\");\r",
 									"const originalCity = pm.environment.get(\"tempCity\");\r",
@@ -399,7 +396,7 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"// TEST 1: Status code (DELETE normalment retorna 204)\r",
+									"// TEST 1: Status code\r",
 									"pm.test(\"Status code is 204\", function () {\r",
 									"    pm.response.to.have.status(204);\r",
 									"});\r",
@@ -478,7 +475,111 @@
 		},
 		{
 			"name": "Pets",
-			"item": []
+			"item": [
+				{
+					"name": "Post Pet",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// --- Pre-request Script per a POST Pet ---\r",
+									"\r",
+									"// 1. Generar dades dinàmiques (Nom i Data)\r",
+									"\r",
+									"const randomPetName = pm.variables.replaceIn(\"{{$randomAdjective}}\"); \r",
+									"\r",
+									"const today = new Date();\r",
+									"const pastDate = new Date();\r",
+									"pastDate.setFullYear(today.getFullYear() - _.random(1, 3)); \r",
+									"const year = pastDate.getFullYear();\r",
+									"const month = String(pastDate.getMonth() + 1).padStart(2, '0');\r",
+									"const day = String(pastDate.getDate()).padStart(2, '0');\r",
+									"const randomBirthDate = `${year}-${month}-${day}`; \r",
+									"\r",
+									"// **********************************************\r",
+									"// 2. Definir Tipus (Utilitza el Tipus Vàlid: Dog ID 2)\r",
+									"// **********************************************\r",
+									"pm.environment.set(\"petName\", randomPetName);\r",
+									"pm.environment.set(\"petBirthDate\", randomBirthDate);\r",
+									"pm.environment.set(\"petTypeId\", 2); \r",
+									"pm.environment.set(\"petTypeName\", \"dog\"); // Utilitzem els valors confirmats (ID 2 = dog)\r",
+									"\r",
+									"console.log(`[PET POST] Creant mascota: ${randomPetName} amb data ${randomBirthDate}`);"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// --- Tests per a POST Pet ---\r",
+									"\r",
+									"// TEST 1: Status code\r",
+									"pm.test(\"Status code is 201 Created\", function () {\r",
+									"    pm.expect(pm.response.code).to.equal(201);\r",
+									"});\r",
+									"\r",
+									"// TEST 2: Temps\r",
+									"pm.test(\"Response time < 2000ms\", function () {\r",
+									"    pm.expect(pm.response.responseTime).to.be.below(2000);\r",
+									"});\r",
+									"\r",
+									"// TEST 3: Verificar creació i encadenament (GUARDA L'ID)\r",
+									"pm.test(\"Pet created successfully and ID saved\", function () {\r",
+									"    if (pm.response.code !== 201) {\r",
+									"        console.error(\"Creació fallida. No es pot continuar amb l'encadenament.\");\r",
+									"        return; // Atura l'execució del test si el status no és 201\r",
+									"    }\r",
+									"    \r",
+									"    const response = pm.response.json();\r",
+									"    \r",
+									"    // 1. Validació de contingut\r",
+									"    pm.expect(response).to.have.property('id');\r",
+									"    pm.expect(response.name).to.equal(pm.environment.get(\"petName\"));\r",
+									"    pm.expect(response.birthDate).to.equal(pm.environment.get(\"petBirthDate\")); // Comprovem data\r",
+									"\r",
+									"    // 2. Encadenament: Guardem l'ID de la mascota\r",
+									"    pm.environment.set(\"createdPetId\", response.id);\r",
+									"    console.log(\"Mascota creada amb ID:\", response.id);\r",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"name\": \"{{petName}}\",\r\n    \"birthDate\": \"{{petBirthDate}}\",\r\n    \"type\": {\r\n        \"id\": {{petTypeId}},\r\n        \"name\": \"{{petTypeName}}\"\r\n    }\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/owners/{{createdOwnerId}}/pets",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"owners",
+								"{{createdOwnerId}}",
+								"pets"
+							]
+						}
+					},
+					"response": []
+				}
+			]
 		},
 		{
 			"name": "Vets",
