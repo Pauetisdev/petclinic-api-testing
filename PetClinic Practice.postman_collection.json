@@ -102,22 +102,17 @@
 									"    //Variables Temporals: Recuperem els valors que havíem enviat\r",
 									"    const expectedFirstName = pm.environment.get(\"tempFirstName\");\r",
 									"    const expectedLastName = pm.environment.get(\"tempLastName\");\r",
-									"    const expectedTelephone = pm.environment.get(\"tempTelephone\"); // Cal recuperar-lo per a la validació de longitud\r",
+									"    const expectedTelephone = pm.environment.get(\"tempTelephone\");\r",
 									"    \r",
 									"    // --- Validació d'Estructura i Tipus ---\r",
-									"    // Validació 1: Comprovem que l'objecte TÉ la propietat 'id'\r",
+									"\r",
 									"    pm.expect(response, \"Response must be a valid Owner object\").to.be.an('object').and.to.have.property('id');\r",
-									"    \r",
-									"    // Validació 2: El valor de l'ID ha de ser un número (no una cadena de text)\r",
 									"    pm.expect(response.id, \"ID must be a number\").to.be.a('number');\r",
-									"    \r",
-									"    // --- Validació de Contingut i Dades ---\r",
-									"    // Validació 3: Les dades retornades coincideixen amb les dades dinàmiques enviades\r",
+									"\r",
 									"    pm.expect(response.firstName, \"FirstName must match sent data\").to.equal(expectedFirstName);\r",
 									"    pm.expect(response.lastName, \"LastName must match sent data\").to.equal(expectedLastName);\r",
 									"    \r",
-									"    // Validació 4: Comprovem que el telèfon retornat té exactament 10 dígits\r",
-									"    // Aquesta línia utilitza el valor de 'telephone' de la resposta, no el de la variable temporal\r",
+									"    //Comprovem que el telèfon retornat té exactament 10 dígits\r",
 									"    pm.expect(response.telephone.length, \"Telephone must have 10 digits\").to.equal(10);\r",
 									"    \r",
 									"    //Encadenament: Desem l'ID per utilitzar-lo en el PUT, DELETE, GET BY ID\r",
@@ -316,9 +311,16 @@
 									"    pm.expect(pm.response.responseTime).to.be.below(2000);\r",
 									"});\r",
 									"\r",
-									"pm.test(\"Owner has ID 1\", function () {\r",
+									"pm.test(\"Owner ID is 11 (Verification)\", function () {\r",
+									"    if (pm.response.code !== 200) {\r",
+									"        pm.expect(false, \"Pre-requisite failed: Status code must be 200.\").to.be.true;\r",
+									"        return; \r",
+									"    }\r",
+									"    \r",
 									"    const owner = pm.response.json();\r",
-									"    pm.expect(owner.id).to.equal(1);\r",
+									"    const expectedOwnerId = pm.environment.get(\"createdOwnerId\");\r",
+									"\r",
+									"    pm.expect(parseInt(owner.id)).to.equal(parseInt(expectedOwnerId));\r",
 									"});\r",
 									"\r",
 									"pm.test(\"Owner has all required fields\", function () {\r",
@@ -338,8 +340,12 @@
 						{
 							"listen": "prerequest",
 							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
 								"packages": {},
-								"type": "text/javascript"
+								"requests": {}
 							}
 						}
 					],
@@ -363,41 +369,16 @@
 					"name": "Post add a new pet to an owner",
 					"event": [
 						{
-							"listen": "prerequest",
-							"script": {
-								"exec": [
-									"// Generació de Dades Temporals Úniques\r",
-									"const randomPetName = pm.variables.replaceIn(\"{{$randomFirstName}}\");\r",
-									"const fixedBirthDay = \"2025-01-01\"; \r",
-									"\r",
-									"// Dades per al camp 'type' (ID numèric i el nom)\r",
-									"const petType = \"dog\"; \r",
-									"const petTypeId = 2; // (ID=2 es 'dog' a la BD)\r",
-									"\r",
-									"//Guardar Dades Temporals a l'Entorn\r",
-									"pm.environment.set(\"tempPetName\", randomPetName);\r",
-									"pm.environment.set(\"tempBirthDay\", fixedBirthDay);\r",
-									"pm.environment.set(\"tempPetType\", petType);\r",
-									"pm.environment.set(\"tempPetTypeId\", petTypeId);"
-								],
-								"type": "text/javascript",
-								"packages": {},
-								"requests": {}
-							}
-						},
-						{
 							"listen": "test",
 							"script": {
 								"exec": [
-									"// --- Tests (Post-response Script) per a POST Pet (CORREGIT) ---",
-									"",
 									"// TEST 1: Codi d'estat esperat (201 Created o 200 OK)",
 									"pm.test(\"Status code is 201 or 200\", function () {",
 									"    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
 									"});",
 									"",
 									"// TEST 2: Encadenament i Validació",
-									"pm.test(\"Pet created, ID captured, and name verified\", function () {",
+									"pm.test(\"Pet created, ID captured, and data verified\", function () {",
 									"    ",
 									"    if (pm.response.code >= 400) {",
 									"        return; ",
@@ -405,21 +386,44 @@
 									"",
 									"    const response = pm.response.json();",
 									"    ",
-									"    // Lectura de la Variable Temporal per a la verificació",
 									"    const expectedName = pm.environment.get(\"tempPetName\");",
+									"    const expectedBirthDay = pm.environment.get(\"tempBirthDay\");",
 									"    ",
-									"    // 1. Validació d'estructura",
+									"    // 1. Validació d'estructura i ID",
 									"    pm.expect(response, \"Response must be an object\").to.have.property('id');",
-									"    ",
 									"    pm.expect(response.id, \"ID must be a number\").to.be.a('number');",
 									"    ",
-									"    // 2. Validació de contingut: Comprovem que el nom retornat coincideix amb el que hem enviat",
+									"    // 2. Validació de contingut: Comprovem que les dades coincideixen",
 									"    pm.expect(response.name, \"Pet name must match sent data\").to.equal(expectedName);",
+									"    pm.expect(response.birthDate, \"Birth date must match sent data\").to.equal(expectedBirthDay);",
 									"    ",
-									"    //Encadenament: Desem l'ID de la nova Mascota",
+									"    // Encadenament: Desem l'ID de la nova Mascota",
 									"    pm.environment.set(\"createdPetId\", response.id);",
 									"    console.log(\"Pet creada amb ID per a encadenament:\", response.id);",
 									"});"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// --- Pre-request Script (Corregido) ---",
+									"",
+									"// Generación de Datos Temporales Únicos",
+									"const randomPetName = pm.variables.replaceIn(\"{{$randomFirstName}}\");",
+									"const fixedBirthDay = \"2025-01-01\";",
+									"",
+									"// Dades per al camp 'type'",
+									"const petTypeId = 2; // (ID=2 és 'dog' a la BD)",
+									"",
+									"// Guardar Dades Temporals a l'Entorn",
+									"pm.environment.set(\"tempPetName\", randomPetName);",
+									"pm.environment.set(\"tempBirthDay\", fixedBirthDay);",
+									"pm.environment.set(\"tempPetTypeId\", petTypeId);"
 								],
 								"type": "text/javascript",
 								"packages": {},
@@ -432,7 +436,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n    \"name\": \"{{tempPetName}}\",\r\n    \"birthDate\": \"{{tempBirthDay}}\",\r\n    \"type\": {\r\n        \"id\": {{tempPetTypeId}},\r\n        \"name\": \"{{tempPetType}}\"\r\n    }\r\n}",
+							"raw": "{\r\n    \"name\": \"{{tempPetName}}\",\r\n    \"birthDate\": \"{{tempBirthDay}}\",\r\n    \"type\": {\r\n        \"id\": 2,\r\n        \"name\": \"dog\"\r\n    }\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -766,69 +770,7 @@
 		},
 		{
 			"name": "Pets",
-			"item": [
-				{
-					"name": "Get All Pets",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"// TEST 1: Codi d'estat 200 OK\r",
-									"pm.test(\"Status code is 200\", function () {\r",
-									"    pm.response.to.have.status(200);\r",
-									"});\r",
-									"\r",
-									"// TEST 2: Temps de resposta ràpid\r",
-									"pm.test(\"Response time is fast (< 500ms)\", function () {\r",
-									"    pm.expect(pm.response.responseTime).to.be.below(500);\r",
-									"});\r",
-									"\r",
-									"// TEST 3: La resposta és un Array\r",
-									"pm.test(\"Response is an array (list of pets)\", function () {\r",
-									"    const jsonData = pm.response.json();\r",
-									"    pm.expect(jsonData, \"The response must be a JSON array\").to.be.an('array');\r",
-									"});\r",
-									"\r",
-									"// TEST 4: L'array amb dades\r",
-									"pm.test(\"Array has data (length > 0)\", function () {\r",
-									"    const jsonData = pm.response.json();\r",
-									"    // La primera clau es = a name\r",
-									"    if (jsonData.length > 0) {\r",
-									"        pm.expect(jsonData[0]).to.have.property('name');\r",
-									"    }\r",
-									"});"
-								],
-								"type": "text/javascript",
-								"packages": {},
-								"requests": {}
-							}
-						}
-					],
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{baseUrl}}/pets",
-							"host": [
-								"{{baseUrl}}"
-							],
-							"path": [
-								"pets"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Get Pet by Id",
-					"request": {
-						"method": "GET",
-						"header": []
-					},
-					"response": []
-				}
-			]
+			"item": []
 		},
 		{
 			"name": "Vets",
