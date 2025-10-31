@@ -766,19 +766,550 @@
 					"response": []
 				}
 			],
-			"description": "This folder contains endpoints to manage owner data and their pets. It includes operations to create, retrieve, update, and delete owner records, as well as to add and manage pets and their visits. These endpoints facilitate comprehensive management of owners and their associated pets within the system."
+			"description": "This folder contains endpoints to manage owner data and their associated pets within the PetClinic system. It provides comprehensive CRUD operations to create, retrieve, update, and delete owner records, including detailed owner information such as contact details and addresses. Additionally, it includes specialized endpoints to manage the relationship between owners and their pets, allowing you to add new pets to an owner's profile and track visit history. These endpoints support full lifecycle management of owner accounts and facilitate seamless integration between owner profiles, pet records, and veterinary visit tracking."
 		},
 		{
 			"name": "Pets",
-			"item": []
+			"item": [
+				{
+					"name": "Get All Pets",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// TEST 1: Codi d'estat 200 OK\r",
+									"pm.test(\"Status code is 200\", function () {\r",
+									"    pm.response.to.have.status(200);\r",
+									"});\r",
+									"\r",
+									"// TEST 2: Temps de resposta ràpid\r",
+									"pm.test(\"Response time is fast (< 500ms)\", function () {\r",
+									"    pm.expect(pm.response.responseTime).to.be.below(500);\r",
+									"});\r",
+									"\r",
+									"// TEST 3: La resposta és un Array\r",
+									"pm.test(\"Response is an array (list of pets)\", function () {\r",
+									"    const jsonData = pm.response.json();\r",
+									"    pm.expect(jsonData, \"The response must be a JSON array\").to.be.an('array');\r",
+									"});\r",
+									"\r",
+									"// TEST 4: L'array conté l'estructura bàsica si hi ha dades\r",
+									"pm.test(\"If data exists, first item has a 'name'\", function () {\r",
+									"    const jsonData = pm.response.json();\r",
+									"    if (jsonData.length > 0) {\r",
+									"        pm.expect(jsonData[0]).to.have.property('name');\r",
+									"    }\r",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/pets",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"pets"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Pet by Id",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// TEST 1: Codi d'estat 200 OK\r",
+									"pm.test(\"Status code is 200\", function () {\r",
+									"    pm.response.to.have.status(200);\r",
+									"});\r",
+									"\r",
+									"// TEST 2: Temps de resposta ràpid\r",
+									"pm.test(\"Response time is fast (< 300ms)\", function () {\r",
+									"    pm.expect(pm.response.responseTime).to.be.below(300);\r",
+									"});\r",
+									"\r",
+									"// TEST 3: Verificar Encadenament i ID\r",
+									"pm.test(\"Pet retrieved successfully and ID verified\", function () {\r",
+									"    if (pm.response.code !== 200) return;\r",
+									"    \r",
+									"    const pet = pm.response.json();\r",
+									"    \r",
+									"    //Variable d'Encadenament (Lectura)\r",
+									"    const expectedPetId = pm.environment.get(\"createdPetId\");\r",
+									"    \r",
+									"    // 1. Verificació d'estructura\r",
+									"    pm.expect(pet, \"Response must be a pet object\").to.be.an('object').and.to.have.property('id');\r",
+									"    \r",
+									"    // 2. Verificació de l'Encadenament (PK)\r",
+									"    // Utilitzem parseInt per assegurar que comparem 'int'\r",
+									"    pm.expect(parseInt(pet.id), \"The returned Pet ID must match the chained ID\").to.equal(parseInt(expectedPetId));\r",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/pets/{{createdPetId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"pets",
+								"{{createdPetId}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Pet Details",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"const newPetName = pm.environment.replaceIn(\"{{$randomAdjective}}\") + \"UPDATED\";\r",
+									"const fixedPetType = \"dog\";\r",
+									"\r",
+									"pm.environment.set(\"tempNewPetName\", newPetName);\r",
+									"pm.environment.set(\"tempPetType\", fixedPetType);\r",
+									"\r",
+									"console.log(`[PRE-REQ] Nou nom Mascota a enviar: ${newPetName}`);"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200 or 204\", function () {\r",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 204]);\r",
+									"});\r",
+									"\r",
+									"pm.test(\"Response time is fast (< 2000ms)\", function () {\r",
+									"    pm.expect(pm.response.responseTime).to.be.below(2000);\r",
+									"});\r",
+									"\r",
+									"// Verificar que el nom s'ha actualitzat (si el backend retorna body)\r",
+									"pm.test(\"New Pet Name updated successfully (from response body)\", function () {\r",
+									"    if (pm.response.code !== 200) {\r",
+									"        // Si és 204 (No Content), no hi ha body per comprovar.\r",
+									"        return; \r",
+									"    }\r",
+									"    \r",
+									"    const response = pm.response.json();\r",
+									"    const expectedPetName = pm.environment.get(\"tempNewPetName\")\r",
+									"\r",
+									"    // Comprovar que el nom tornat coincideix amb el que hem enviat\r",
+									"    pm.expect(response.name).to.equal(expectedPetName);\r",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"id\": {{createdPetId}}, \r\n    \"name\": \"{{tempNewPetName}}\", // Name Actualitzat\r\n    \"birthDate\": \"{{tempBirthDay}}\", \r\n    \"type\": {\r\n        \"id\": {{tempPetTypeId}}, \r\n        \"name\": \"{{tempPetType}}\"\r\n    }\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/pets/{{createdPetId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"pets",
+								"{{createdPetId}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete a Pet",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// TEST 1: Codi d'estat esperat 204 NO CONTENT\r",
+									"pm.test(\"Status code is 204 (Success)\", function () {\r",
+									"    pm.response.to.have.status(204);\r",
+									"});\r",
+									"\r",
+									"// TEST 2: Temps de resposta ràpid\r",
+									"pm.test(\"Response time is fast (< 2000ms)\", function () {\r",
+									"    pm.expect(pm.response.responseTime).to.be.below(2000);\r",
+									"});\r",
+									"\r",
+									"// TEST 3: Neteja de la variable d'encadenament\r",
+									"pm.test(\"Clean up createdPetId variable\", function () {\r",
+									"    //Neteja de l'ID de la Mascota: ja no es necessita per a Pet Types ni per a cap altre Pet\r",
+									"    pm.environment.unset(\"createdPetId\");\r",
+									"    console.log(\"createdPetId eliminat de l'entorn.\");\r",
+									"    pm.expect(true).to.be.true;\r",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/pets/{{createdPetId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"pets",
+								"{{createdPetId}}"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "This folder contains endpoints to manage pet data and medical records within the PetClinic system. It provides operations to retrieve all pets in the database, fetch individual pet details by ID, update pet information including breed, age, and medical history, and remove pet records when necessary. These endpoints support comprehensive pet profile management, enabling tracking of pet demographics, health status, and ownership associations. The API facilitates efficient pet data administration and serves as a core component for veterinary care coordination."
 		},
 		{
 			"name": "Vets",
-			"item": []
-		},
-		{
-			"name": "Visits",
-			"item": []
+			"item": [
+				{
+					"name": "Get All Pets",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// TEST 1: Codi d'estat 200 OK\r",
+									"pm.test(\"Status code is 200\", function () {\r",
+									"    pm.response.to.have.status(200);\r",
+									"});\r",
+									"\r",
+									"// TEST 2: Temps de resposta ràpid\r",
+									"pm.test(\"Response time is fast (< 500ms)\", function () {\r",
+									"    pm.expect(pm.response.responseTime).to.be.below(500);\r",
+									"});\r",
+									"\r",
+									"// TEST 3: La resposta és un Array\r",
+									"pm.test(\"Response is an array (list of vets)\", function () {\r",
+									"    const jsonData = pm.response.json();\r",
+									"    pm.expect(jsonData, \"The response must be a JSON array\").to.be.an('array');\r",
+									"});\r",
+									"\r",
+									"// TEST 4: Comprovar que l'array no estigui buit i que el primer element tingui 'firstName'\r",
+									"pm.test(\"Array is not empty and first item has 'firstName'\", function () {\r",
+									"    const jsonData = pm.response.json();\r",
+									"    \r",
+									"    pm.expect(jsonData.length, \"The array of Vets should not be empty\").to.be.above(0);\r",
+									"    pm.expect(jsonData[0]).to.have.property('firstName');\r",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/vets",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"vets"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Add a new Vet",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"const randomFirstName = pm.variables.replaceIn(\"{{$randomFirstName}}\")\r",
+									"const randomLastName = pm.variables.replaceIn(\"{{$randomLastName}}\")\r",
+									"\r",
+									"pm.environment.set(\"tempVetFirstName\", randomFirstName);\r",
+									"pm.environment.set(\"tempVetLastName\", randomLastName);\r",
+									"\r",
+									"console.log(`[PRE-REQ] Vet generat: ${randomFirstName} ${randomLastName}`);"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// TEST 1: Codi d'estat esperat (201 Created o 200 OK)\r",
+									"pm.test(\"Status code is 201 or 200\", function () {\r",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 201]);\r",
+									"});\r",
+									"\r",
+									"// TEST 2: Encadenament i Validació de Contingut\r",
+									"pm.test(\"Vet created, ID captured, and name verified\", function () {\r",
+									"    \r",
+									"    if (pm.response.code >= 400) {\r",
+									"        return; \r",
+									"    }\r",
+									"\r",
+									"    const response = pm.response.json();\r",
+									"    \r",
+									"    // 1. Validació d'estructura i ID\r",
+									"    pm.expect(response, \"Response must be an object\").to.have.property('id');\r",
+									"    pm.expect(response.id, \"ID must be a number\").to.be.a('number');\r",
+									"\r",
+									"    //Lectura de les Variables Temporals per a la verificació\r",
+									"    const expectedFirstName = pm.environment.get(\"tempVetFirstName\");\r",
+									"    const expectedLastName = pm.environment.get(\"tempVetLastName\");\r",
+									"        \r",
+									"    // 2. Validació de contingut: Comprovem que el nom coincideix\r",
+									"    pm.expect(response.firstName, \"FirstName must match sent data\").to.equal(expectedFirstName);\r",
+									"    pm.expect(response.lastName, \"LastName must match sent data\").to.equal(expectedLastName);\r",
+									"    \r",
+									"    //Encadenament: Desem l'ID del nou Vet\r",
+									"    pm.environment.set(\"createVetId\", response.id);\r",
+									"    console.log(\"Veterinari creat amb ID per a encadenament:\", response.id);\r",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"firstName\":\"{{tempVetFirstName}}\",\r\n    \"lastName\": \"{{tempVetLastName}}\",\r\n    \"specialties\": []\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/vets",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"vets"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "New Request",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"const newVetFirstName = pm.environment.replaceIn(\"{{$randomFirstName}}\") + \" UPDATED\";\r",
+									"pm.environment.set(\"tempVetNewFirstName\", newVetFirstName);\r",
+									"\r",
+									"\r",
+									"console.log(`[PRE-REQ] Nou veterianri a enviar: ${newVetFirstName}`);"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// TEST 1: Codi d'estat esperat (200 OK o 204 NO CONTENT)\r",
+									"pm.test(\"Status code is 200 or 204\", function () {\r",
+									"    // 200 si retorna el body, 204 si no retorna contingut\r",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 204]);\r",
+									"});\r",
+									"\r",
+									"// TEST 2: Temps de resposta ràpid\r",
+									"pm.test(\"Response time < 2000ms\", function () {\r",
+									"    pm.expect(pm.response.responseTime).to.be.below(2000);\r",
+									"});\r",
+									"\r",
+									"// TEST 3: Verificar actualització del PRIMER NOM\r",
+									"pm.test(\"Updated FirstName verified (if body is returned)\", function () {\r",
+									"    //Lectura de la Variable Temporal\r",
+									"    const expectedNewFirstName = pm.environment.get(\"tempVetNewFirstName\");\r",
+									"    \r",
+									"    // Si la resposta és 204 (No Content), la prova passa sense Body\r",
+									"    if (pm.response.code === 204) {\r",
+									"        pm.expect(true, \"Actualització confirmada pel codi 204.\").to.be.true; \r",
+									"        return; \r",
+									"    } \r",
+									"    \r",
+									"    // Si la resposta és 200 (OK), verifiquem el Body\r",
+									"    else if (pm.response.code === 200) {\r",
+									"        const response = pm.response.json();\r",
+									"        \r",
+									"        // Comprovem que el nom retornat coincideix amb el valor temporal nou\r",
+									"        pm.expect(response.firstName, \"The returned FirstName must match the temporary new value\").to.equal(expectedNewFirstName);\r",
+									"    }\r",
+									"});\r",
+									"\r",
+									"// NO ELIMINAR LA NOVA VARIABLE ACTUALITZADA, PER PODER COMPROVARLA EN EL GET BY ID"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"firstName\":\"{{tempVetNewFirstName}}\", //Actulitzada\r\n    \"lastName\": \"{{tempVetLastName}}\",\r\n    \"specialties\": []\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/vets/{{createVetId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"vets",
+								"{{createVetId}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Pet by Id",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// TEST 1: Codi d'estat 200 OK\r",
+									"pm.test(\"Status code is 200\", function () {\r",
+									"    pm.response.to.have.status(200);\r",
+									"});\r",
+									"\r",
+									"// TEST 2: Temps de resposta ràpid\r",
+									"pm.test(\"Response time is fast (< 300ms)\", function () {\r",
+									"    pm.expect(pm.response.responseTime).to.be.below(300);\r",
+									"});\r",
+									"\r",
+									"// TEST 3: Verificar l'estructura de la resposta\r",
+									"pm.test(\"Vet object retrieved successfully\", function () {\r",
+									"    const vet = pm.response.json();\r",
+									"    \r",
+									"    // 1. Verificació d'estructura bàsica\r",
+									"    pm.expect(vet, \"Response must be a Vet object\").to.be.an('object');\r",
+									"    pm.expect(vet).to.have.property('id');\r",
+									"    pm.expect(vet).to.have.property('firstName');\r",
+									"    pm.expect(vet).to.have.property('lastName');\r",
+									"});\r",
+									"\r",
+									"// TEST 4: Verificar l'ID que hem demanat\r",
+									"pm.test(\"Verify the requested ID\", function () {\r",
+									"    const vet = pm.response.json();\r",
+									"    const expectedVetId = pm.environment.get(\"createVetId\");\r",
+									"    \r",
+									"    pm.expect(parseInt(vet.id), \"The returned Vet ID must be 1\").to.equal(expectedVetId);\r",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/vets/{{createVetId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"vets",
+								"{{createVetId}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "New Request",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/vets/{{createVetId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"vets",
+								"{{createVetId}}"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "This folder contains endpoints to manage veterinarian data and professional profiles within the PetClinic system. It includes full CRUD operations to create new vet accounts, retrieve complete veterinarian listings or individual vet details, update professional information such as specialties and credentials, and remove vet records from the system. These endpoints enable comprehensive management of veterinary staff, including their qualifications, areas of expertise, and availability. The API supports clinic administration, staff scheduling, and helps match pets with appropriate veterinary specialists based on their medical needs."
 		}
 	]
 }
