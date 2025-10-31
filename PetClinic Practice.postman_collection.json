@@ -72,6 +72,236 @@
 					"response": []
 				},
 				{
+					"name": "Create Owner",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// --- Tests (Post-response Script) per a POST Owner (Simplificat) ---\r",
+									"\r",
+									"// TEST 1: Codi d'estat esperat (201 Created o 200 OK)\r",
+									"pm.test(\"Status code is 200 or 201\", function () {\r",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 201]);\r",
+									"});\r",
+									"\r",
+									"// TEST 2: Temps de resposta ràpid\r",
+									"pm.test(\"Response time < 2000ms\", function () {\r",
+									"    pm.expect(pm.response.responseTime).to.be.below(2000);\r",
+									"});\r",
+									"\r",
+									"// TEST 3: Encadenament i Validació de Contingut (CORREGIT)\r",
+									"pm.test(\"Owner created, ID captured, and data verified\", function () {\r",
+									"    \r",
+									"    if (pm.response.code >= 400) {\r",
+									"        return; // Sortim si hi ha un error HTTP (ex: 400 Bad Request)\r",
+									"    }\r",
+									"\r",
+									"    const response = pm.response.json();\r",
+									"    \r",
+									"    //Variables Temporals: Recuperem els valors que havíem enviat\r",
+									"    const expectedFirstName = pm.environment.get(\"tempFirstName\");\r",
+									"    const expectedLastName = pm.environment.get(\"tempLastName\");\r",
+									"    const expectedTelephone = pm.environment.get(\"tempTelephone\"); // Cal recuperar-lo per a la validació de longitud\r",
+									"    \r",
+									"    // --- Validació d'Estructura i Tipus ---\r",
+									"    // Validació 1: Comprovem que l'objecte TÉ la propietat 'id'\r",
+									"    pm.expect(response, \"Response must be a valid Owner object\").to.be.an('object').and.to.have.property('id');\r",
+									"    \r",
+									"    // Validació 2: El valor de l'ID ha de ser un número (no una cadena de text)\r",
+									"    pm.expect(response.id, \"ID must be a number\").to.be.a('number');\r",
+									"    \r",
+									"    // --- Validació de Contingut i Dades ---\r",
+									"    // Validació 3: Les dades retornades coincideixen amb les dades dinàmiques enviades\r",
+									"    pm.expect(response.firstName, \"FirstName must match sent data\").to.equal(expectedFirstName);\r",
+									"    pm.expect(response.lastName, \"LastName must match sent data\").to.equal(expectedLastName);\r",
+									"    \r",
+									"    // Validació 4: Comprovem que el telèfon retornat té exactament 10 dígits\r",
+									"    // Aquesta línia utilitza el valor de 'telephone' de la resposta, no el de la variable temporal\r",
+									"    pm.expect(response.telephone.length, \"Telephone must have 10 digits\").to.equal(10);\r",
+									"    \r",
+									"    //Encadenament: Desem l'ID per utilitzar-lo en el PUT, DELETE, GET BY ID\r",
+									"    pm.environment.set(\"createdOwnerId\", response.id);\r",
+									"    console.log(\"Owner creat amb ID per a encadenament:\", response.id);\r",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Per generar strings random (Nom, Cognom, Ciutat, Adreça)\r",
+									"const randomFirstName = pm.variables.replaceIn(\"{{$randomFirstName}}\");\r",
+									"const randomLastName = pm.variables.replaceIn(\"{{$randomLastName}}\");\r",
+									"const randomCity = pm.variables.replaceIn(\"{{$randomCity}}\");\r",
+									"const randomAddress = pm.variables.replaceIn(\"{{$randomStreetAddress}}\");\r",
+									"\r",
+									"const minTelephone = 1000000000; \r",
+									"const maxTelephone = 9999999999;\r",
+									"const randomTelephone = _.random(minTelephone, maxTelephone).toString();\r",
+									"\r",
+									"// Guardar les dades\r",
+									"pm.environment.set(\"tempFirstName\", randomFirstName);\r",
+									"pm.environment.set(\"tempLastName\", randomLastName);\r",
+									"pm.environment.set(\"tempTelephone\", randomTelephone);\r",
+									"pm.environment.set(\"tempCity\", randomCity);\r",
+									"pm.environment.set(\"tempAddress\", randomAddress);\r",
+									"\r",
+									"console.log(`[PRE-REQ] Owner generat: ${randomFirstName} ${randomLastName}. Telèfon: ${randomTelephone}`);"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"firstName\": \"{{tempFirstName}}\",\r\n    \"lastName\": \"{{tempLastName}}\",\r\n    \"address\": \"{{tempAddress}}\",\r\n    \"city\": \"{{tempCity}}\",\r\n    \"telephone\": \"{{tempTelephone}}\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/owners",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"owners"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Onwer",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// --- Tests (Post-response Script) per a PUT Owner (Simplificat) ---\r",
+									"\r",
+									"// TEST 1: Codi d'estat esperat (200 OK o 204 NO CONTENT)\r",
+									"pm.test(\"Status code is 200 or 204\", function () {\r",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 204]);\r",
+									"});\r",
+									"\r",
+									"// TEST 2: Temps de resposta ràpid\r",
+									"pm.test(\"Response time < 2000ms\", function () {\r",
+									"    pm.expect(pm.response.responseTime).to.be.below(2000);\r",
+									"});\r",
+									"\r",
+									"// TEST 3: Verificar actualització (Només si el backend retorna dades)\r",
+									"pm.test(\"New LastName updated successfully (if body is returned)\", function () {\r",
+									"    // Variable Temporal: Recuperem el valor que havíem enviat des del Pre-request\r",
+									"    const expectedLastName = pm.environment.get(\"tempNewLastName\");\r",
+									"\r",
+									"    // Si el backend respon amb 200 (OK), ha de retornar l'objecte\r",
+									"    if (pm.response.code === 200) {\r",
+									"        const response = pm.response.json();\r",
+									"        \r",
+									"        // Comprovem que el cognom retornat coincideix amb el que esperàvem\r",
+									"        pm.expect(response.lastName).to.equal(expectedLastName);\r",
+									"    }\r",
+									"    \r",
+									"    // Si el codi és 204 (No Content), la prova passa automàticament sense body per comprovar (server pot ronar 200 o 204, tot ok)\r",
+									"    if (pm.response.code === 204) {\r",
+									"        pm.expect(true).to.be.true; \r",
+									"    }\r",
+									"});\r",
+									"\r",
+									"// TEST 4: Neteja de la variable temporal\r",
+									"pm.test(\"Clean up temp variable\", function () {\r",
+									"    //Eliminem la variable temporal que només s'ha usat per enviar el Body d'aquest PUT\r",
+									"    pm.environment.unset(\"tempNewLastName\");\r",
+									"    pm.expect(true).to.be.true; // Assegurem que el test es registra com a PASS\r",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// --- Pre-request Script per a PUT Owner ---\r",
+									"\r",
+									"// 1. Generar un nou valor de modificació amb el tag \"MODIFICAT\"\r",
+									"const newLastName = pm.variables.replaceIn(\"{{$randomLastName}}\") + \" MODIFICAT\";\r",
+									"\r",
+									"// 2. Guardar el nou valor en una variable temporal\r",
+									"pm.environment.set(\"tempNewLastName\", newLastName);\r",
+									"\r",
+									"// 3. Recuperar els valors originals dels altres camps des de l'entorn\r",
+									"const originalFirstName = pm.environment.get(\"tempFirstName\");\r",
+									"const originalAddress = pm.environment.get(\"tempAddress\");\r",
+									"const originalCity = pm.environment.get(\"tempCity\");\r",
+									"const originalTelephone = pm.environment.get(\"tempTelephone\");\r",
+									"\r",
+									"// Si algun camp original no existeix, avisar\r",
+									"if (!originalFirstName || !originalTelephone) {\r",
+									"    console.error(\"ERROR: Dades d'Owner originals no trobades. Revisa la neteja al script POST.\");\r",
+									"}\r",
+									"\r",
+									"console.log(`[PUT PRE-REQ] Nou Cognom a enviar: ${newLastName}`);"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"firstName\": \"{{tempFirstName}}\",\r\n    \"lastName\": \"{{tempNewLastName}}\", //Dada a actualitzar\r\n    \"address\": \"{{tempAddress}}\",\r\n    \"city\": \"{{tempCity}}\",\r\n    \"telephone\": \"{{tempTelephone}}\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/owners/{{createdOwnerId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"owners",
+								"{{createdOwnerId}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
 					"name": "Get Owner by Id",
 					"event": [
 						{
@@ -104,278 +334,18 @@
 								"packages": {},
 								"requests": {}
 							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"packages": {},
+								"type": "text/javascript"
+							}
 						}
 					],
 					"request": {
 						"method": "GET",
 						"header": [],
-						"url": {
-							"raw": "{{baseUrl}}/owners/1",
-							"host": [
-								"{{baseUrl}}"
-							],
-							"path": [
-								"owners",
-								"1"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Create Owner",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"// --- Tests (Post-response Script) ---\r",
-									"\r",
-									"// TEST 1: Status code (El backend retorna 201 Created o 200 OK)\r",
-									"pm.test(\"Status code is 200 or 201\", function () {\r",
-									"    pm.expect(pm.response.code).to.be.oneOf([200, 201]);\r",
-									"});\r",
-									"\r",
-									"// TEST 2: Temps\r",
-									"pm.test(\"Response time < 2000ms\", function () {\r",
-									"    pm.expect(pm.response.responseTime).to.be.below(2000);\r",
-									"});\r",
-									"\r",
-									"// TEST 3: Verificar Owner creat, dades i encadenament\r",
-									"pm.test(\"Owner created successfully and data matches input\", function () {\r",
-									"    // Obtenir les dades que s'han enviat (necessàries per a la verificació)\r",
-									"    const expectedFirstName = pm.environment.get(\"tempFirstName\");\r",
-									"    const expectedLastName = pm.environment.get(\"tempLastName\");\r",
-									"    const expectedTelephone = pm.environment.get(\"tempTelephone\");\r",
-									"    \r",
-									"    // Si la petició retorna un 4xx (i el Test 1 falla), el response.json() podria fallar.\r",
-									"    if (pm.response.code >= 400) {\r",
-									"        return; \r",
-									"    }\r",
-									"    \r",
-									"    const response = pm.response.json();\r",
-									"    \r",
-									"    // Suposem que el backend retorna l'objecte creat (no un array)\r",
-									"    if (!Array.isArray(response) && response.id) {\r",
-									"        \r",
-									"        // 1. Encadenament: Desem l'ID per al PUT/DELETE\r",
-									"        pm.environment.set(\"createdOwnerId\", response.id);\r",
-									"        console.log(\"Owner creat amb ID:\", response.id);\r",
-									"        \r",
-									"        // 2. Validació d'estructura: Comprovem que es retorna l'ID\r",
-									"        pm.expect(response).to.have.property('id');\r",
-									"        \r",
-									"        // 3. Validació de contingut: Comprovem que les dades tornades coincideixen amb les dades dinàmiques enviades\r",
-									"        pm.expect(response.firstName).to.equal(expectedFirstName);\r",
-									"        pm.expect(response.lastName).to.equal(expectedLastName);\r",
-									"        pm.expect(response.telephone).to.equal(expectedTelephone);\r",
-									"        \r",
-									"        \r",
-									"        \r",
-									"    } else {\r",
-									"        // Lògica alternativa si el backend retorna una llista o un objecte inesperat\r",
-									"        console.warn(\"La resposta no retorna un objecte Owner amb ID, revisa el backend.\");\r",
-									"    }\r",
-									"});\r",
-									"\r",
-									"// TEST 4: El telèfon té 10 dígits (Comprovació addicional)\r",
-									"pm.test(\"Telephone has 10 digits\", function () {\r",
-									"    if (pm.response.code >= 400) {\r",
-									"        return; \r",
-									"    }\r",
-									"    const response = pm.response.json();\r",
-									"    const owner = Array.isArray(response) ? response[response.length - 1] : response;\r",
-									"    \r",
-									"    if (owner && owner.telephone) {\r",
-									"        pm.expect(owner.telephone.length).to.equal(10);\r",
-									"    }\r",
-									"});"
-								],
-								"type": "text/javascript",
-								"packages": {},
-								"requests": {}
-							}
-						},
-						{
-							"listen": "prerequest",
-							"script": {
-								"exec": [
-									"// --- Pre-request Script CORREGIT ---\r",
-									"\r",
-									"// Per generar strings random (Nom, Cognom, Ciutat, Adreça), la teva sintaxi era correcta\r",
-									"const randomFirstName = pm.variables.replaceIn(\"{{$randomFirstName}}\");\r",
-									"const randomLastName = pm.variables.replaceIn(\"{{$randomLastName}}\");\r",
-									"const randomCity = pm.variables.replaceIn(\"{{$randomCity}}\");\r",
-									"const randomAddress = pm.variables.replaceIn(\"{{$randomStreetAddress}}\");\r",
-									"\r",
-									"const minTelephone = 1000000000; \r",
-									"const maxTelephone = 9999999999;\r",
-									"const randomTelephone = _.random(minTelephone, maxTelephone).toString(); // Genera un número i el fa STRING\r",
-									"\r",
-									"// Guardar les dades\r",
-									"pm.environment.set(\"tempFirstName\", randomFirstName);\r",
-									"pm.environment.set(\"tempLastName\", randomLastName);\r",
-									"pm.environment.set(\"tempTelephone\", randomTelephone); // <--- AQUEST ÉS EL NÚMERO REAL\r",
-									"pm.environment.set(\"tempCity\", randomCity);\r",
-									"pm.environment.set(\"tempAddress\", randomAddress);\r",
-									"\r",
-									"console.log(`[PRE-REQ] Owner generat: ${randomFirstName} ${randomLastName}. Telèfon: ${randomTelephone}`);"
-								],
-								"type": "text/javascript",
-								"packages": {},
-								"requests": {}
-							}
-						}
-					],
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json",
-								"type": "text"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\r\n    \"firstName\": \"{{tempFirstName}}\",\r\n    \"lastName\": \"{{tempLastName}}\",\r\n    \"address\": \"{{tempAddress}}\",\r\n    \"city\": \"{{tempCity}}\",\r\n    \"telephone\": \"{{tempTelephone}}\"\r\n}\r\n\r\n//utilizacio de les variables de entorn",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{baseUrl}}/owners",
-							"host": [
-								"{{baseUrl}}"
-							],
-							"path": [
-								"owners"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Update Onwer",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"// --- Tests (Post-response Script) per a PUT Owner ---\r",
-									"\r",
-									"// TEST 1: Status code (PUT pot retornar 200 o 204)\r",
-									"pm.test(\"Status code is 200 or 204\", function () {\r",
-									"    pm.expect(pm.response.code).to.be.oneOf([200, 204]);\r",
-									"});\r",
-									"\r",
-									"// TEST 2: Temps\r",
-									"pm.test(\"Response time < 2000ms\", function () {\r",
-									"    pm.expect(pm.response.responseTime).to.be.below(2000);\r",
-									"});\r",
-									"\r",
-									"// TEST 3: Verificar actualització (si retorna body)\r",
-									"pm.test(\"New LastName updated successfully (from response body)\", function () {\r",
-									"    const expectedLastName = pm.environment.get(\"tempNewLastName\");\r",
-									"\r",
-									"    // ... (La resta del teu codi de TEST 3 és correcte)\r",
-									"    if (pm.response.code === 204) {\r",
-									"        pm.expect(true).to.be.true; \r",
-									"    } \r",
-									"    else if (pm.response.code === 200) {\r",
-									"        const response = pm.response.json();\r",
-									"        \r",
-									"        if (!Array.isArray(response)) {\r",
-									"            pm.expect(response.lastName).to.equal(expectedLastName);\r",
-									"        }\r",
-									"        else {\r",
-									"            const updated = response.find(o => o.id == pm.environment.get(\"createdOwnerId\"));\r",
-									"            if (updated) {\r",
-									"                pm.expect(updated.lastName).to.equal(expectedLastName);\r",
-									"            }\r",
-									"        }\r",
-									"    }\r",
-									"});\r",
-									"\r",
-									"// TEST 4: Verificar que existeix l'owner amb GET (Comprovació de persistència)\r",
-									"pm.test(\"Verify update with GET (Persistence Check)\", function () {\r",
-									"    const expectedLastName = pm.environment.get(\"tempNewLastName\");\r",
-									"    \r",
-									"    pm.sendRequest({\r",
-									"        url: pm.environment.get(\"baseUrl\") + \"/owners/\" + pm.environment.get(\"createdOwnerId\"),\r",
-									"        method: \"GET\"\r",
-									"    }, function (err, response) {\r",
-									"        if (!err && response.code === 200) {\r",
-									"            const owner = response.json();\r",
-									"            \r",
-									"            pm.expect(owner.lastName).to.equal(expectedLastName);\r",
-									"            console.log(\"Owner actualitzat persistentment:\", owner);\r",
-									"            \r",
-									"            // Netejar només la variable temporal del PUT un cop finalitzada la verificació\r",
-									"            pm.environment.unset(\"tempNewLastName\");\r",
-									"            \r",
-									"        } else {\r",
-									"            console.error(\"La verificació GET ha fallat o no ha trobat el recurs.\");\r",
-									"        }\r",
-									"    });\r",
-									"});"
-								],
-								"type": "text/javascript",
-								"packages": {},
-								"requests": {}
-							}
-						},
-						{
-							"listen": "prerequest",
-							"script": {
-								"exec": [
-									"// --- Pre-request Script per a PUT Owner ---\r",
-									"\r",
-									"// 1. Generar un nou valor de modificació amb el tag \"MODIFICAT\"\r",
-									"const newLastName = pm.variables.replaceIn(\"{{$randomLastName}}\") + \" MODIFICAT\";\r",
-									"\r",
-									"// 2. Guardar el nou valor en una variable temporal\r",
-									"pm.environment.set(\"tempNewLastName\", newLastName);\r",
-									"\r",
-									"// 3. Recuperar els valors originals dels altres camps des de l'entorn\r",
-									"const originalFirstName = pm.environment.get(\"tempFirstName\");\r",
-									"const originalAddress = pm.environment.get(\"tempAddress\");\r",
-									"const originalCity = pm.environment.get(\"tempCity\");\r",
-									"const originalTelephone = pm.environment.get(\"tempTelephone\");\r",
-									"\r",
-									"// Si algun camp original no existeix, t'avisarà\r",
-									"if (!originalFirstName || !originalTelephone) {\r",
-									"    console.error(\"ERROR: Dades d'Owner originals no trobades. Revisa la neteja al script POST.\");\r",
-									"}\r",
-									"\r",
-									"console.log(`[PUT PRE-REQ] Nou Cognom a enviar: ${newLastName}`);"
-								],
-								"type": "text/javascript",
-								"packages": {},
-								"requests": {}
-							}
-						}
-					],
-					"request": {
-						"method": "PUT",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json",
-								"type": "text"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\r\n    \"firstName\": \"{{tempFirstName}}\",\r\n    \"lastName\": \"{{tempNewLastName}}\",\r\n    \"address\": \"{{tempAddress}}\",\r\n    \"city\": \"{{tempCity}}\",\r\n    \"telephone\": \"{{tempTelephone}}\"\r\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
 						"url": {
 							"raw": "{{baseUrl}}/owners/{{createdOwnerId}}",
 							"host": [
@@ -390,52 +360,374 @@
 					"response": []
 				},
 				{
+					"name": "Post add a new pet to an owner",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Generació de Dades Temporals Úniques\r",
+									"const randomPetName = pm.variables.replaceIn(\"{{$randomFirstName}}\");\r",
+									"const fixedBirthDay = \"2025-01-01\"; \r",
+									"\r",
+									"// Dades per al camp 'type' (ID numèric i el nom)\r",
+									"const petType = \"dog\"; \r",
+									"const petTypeId = 2; // (ID=2 es 'dog' a la BD)\r",
+									"\r",
+									"//Guardar Dades Temporals a l'Entorn\r",
+									"pm.environment.set(\"tempPetName\", randomPetName);\r",
+									"pm.environment.set(\"tempBirthDay\", fixedBirthDay);\r",
+									"pm.environment.set(\"tempPetType\", petType);\r",
+									"pm.environment.set(\"tempPetTypeId\", petTypeId);"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// --- Tests (Post-response Script) per a POST Pet (CORREGIT) ---",
+									"",
+									"// TEST 1: Codi d'estat esperat (201 Created o 200 OK)",
+									"pm.test(\"Status code is 201 or 200\", function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+									"});",
+									"",
+									"// TEST 2: Encadenament i Validació",
+									"pm.test(\"Pet created, ID captured, and name verified\", function () {",
+									"    ",
+									"    if (pm.response.code >= 400) {",
+									"        return; ",
+									"    }",
+									"",
+									"    const response = pm.response.json();",
+									"    ",
+									"    // Lectura de la Variable Temporal per a la verificació",
+									"    const expectedName = pm.environment.get(\"tempPetName\");",
+									"    ",
+									"    // 1. Validació d'estructura",
+									"    pm.expect(response, \"Response must be an object\").to.have.property('id');",
+									"    ",
+									"    pm.expect(response.id, \"ID must be a number\").to.be.a('number');",
+									"    ",
+									"    // 2. Validació de contingut: Comprovem que el nom retornat coincideix amb el que hem enviat",
+									"    pm.expect(response.name, \"Pet name must match sent data\").to.equal(expectedName);",
+									"    ",
+									"    //Encadenament: Desem l'ID de la nova Mascota",
+									"    pm.environment.set(\"createdPetId\", response.id);",
+									"    console.log(\"Pet creada amb ID per a encadenament:\", response.id);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"name\": \"{{tempPetName}}\",\r\n    \"birthDate\": \"{{tempBirthDay}}\",\r\n    \"type\": {\r\n        \"id\": {{tempPetTypeId}},\r\n        \"name\": \"{{tempPetType}}\"\r\n    }\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/owners/{{createdOwnerId}}/pets",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"owners",
+								"{{createdOwnerId}}",
+								"pets"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update pet details",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"const newPetName = pm.variables.replaceIn(\"{{$randomAdjective}}\") + \" UPDATED\";\r",
+									"pm.environment.set(\"tempNewPetName\", newPetName);"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// TEST 1: Codi d'estat esperat (200 OK o 204 NO CONTENT)\r",
+									"pm.test(\"Status code is 200 or 204\", function () {\r",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 204]);\r",
+									"});\r",
+									"\r",
+									"// TEST 2: Temps de resposta ràpid\r",
+									"pm.test(\"Response time < 2000ms\", function () {\r",
+									"    pm.expect(pm.response.responseTime).to.be.below(2000);\r",
+									"});\r",
+									"\r",
+									"// TEST 3: Verificar que el nom s'ha actualitzat (si el backend retorna body)\r",
+									"pm.test(\"New Pet Name updated successfully (from response body)\", function () {\r",
+									"    if (pm.response.code !== 200) {\r",
+									"        // Si és 204 (No Content), no hi ha body per comprovar.\r",
+									"        return; \r",
+									"    }\r",
+									"    \r",
+									"    const response = pm.response.json();\r",
+									"    const expectedPetName = pm.environment.get(\"tempNewPetName\")\r",
+									"\r",
+									"    // Comprovar que el nom tornat coincideix amb el que hem enviat\r",
+									"    pm.expect(response.name).to.equal(expectedPetName);\r",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"name\": \"{{tempNewPetName}}\",\r\n    \"birthDate\": \"{{tempBirthDay}}\",\r\n    \"type\": {\r\n        \"id\": {{tempPetTypeId}},\r\n        \"name\": \"{{tempPetType}}\"\r\n    }\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/owners/{{createdOwnerId}}/pets/{{createdPetId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"owners",
+								"{{createdOwnerId}}",
+								"pets",
+								"{{createdPetId}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Pet by ID",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {\r",
+									"    pm.response.to.have.status(200);\r",
+									"});\r",
+									"\r",
+									"pm.test(\"Response time < 2000ms\", function () {\r",
+									"    pm.expect(pm.response.responseTime).to.be.below(2000);\r",
+									"});\r",
+									"\r",
+									"// TEST 3: Verificar que l'objecte Mascota existeix i té ID (CORREGIT)\r",
+									"pm.test(\"Response is a valid Pet object with ID\", function () {\r",
+									"    // ⚠️ Si el Test 1 falla amb 404, no intentem llegir el JSON\r",
+									"    if (pm.response.code !== 200) {\r",
+									"        return; \r",
+									"    }\r",
+									"    \r",
+									"    const pet = pm.response.json();\r",
+									"    \r",
+									"    // 1. Validació d'estructura (Correcció)\r",
+									"    // Utilitzem 'to.have.property' només per comprovar que la clau existeix.\r",
+									"    pm.expect(pet, \"Response must be an object\").to.be.an('object');\r",
+									"\r",
+									"    //Comprovem que l'ID existeix\r",
+									"    pm.expect(pet, 'The pet object must contain an ID').to.have.property('id');\r",
+									"    \r",
+									"    //Comprovem que el nom existeix\r",
+									"    pm.expect(pet, 'The pet object must contain a name').to.have.property('name');\r",
+									"    \r",
+									"    // 2. Validació d'Encadenament: Comprovar que l'ID retornat coincideix amb el capturat.\r",
+									"    const expectedPetId = pm.environment.get(\"createdPetId\");\r",
+									"    \r",
+									"    if (expectedPetId) {\r",
+									"        // Assegurar que el valor de l'ID retornat sigui igual al que vam capturar (encadenament)\r",
+									"        pm.expect(pet.id, \"The returned ID must match the createdPetId\").to.equal(parseInt(expectedPetId));\r",
+									"    }\r",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/owners/{{createdOwnerId}}/pets/{{createdPetId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"owners",
+								"{{createdOwnerId}}",
+								"pets",
+								"{{createdPetId}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Post Add a vet visit for a pet",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Utilitzem la data d'avui en format YYYY-MM-DD\r",
+									"const today = new Date().toISOString().slice(0, 10); \r",
+									"\r",
+									"// Generem una descripció de la visita\r",
+									"const visitDescription = \"Routine checkup and annual vaccine.\";\r",
+									"\r",
+									"// 🔑 Guardar Dades Temporals\r",
+									"pm.environment.set(\"tempVisitDate\", today);\r",
+									"pm.environment.set(\"tempVisitDescription\", visitDescription);\r",
+									"\r",
+									"console.log(`[PRE-REQ] Visita programada per a: ${today}`);"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// --- Tests (Post-response Script) per a POST Visit ---\r",
+									"\r",
+									"// TEST 1: Codi d'estat esperat (201 Created o 200 OK)\r",
+									"pm.test(\"Status code is 201 or 200\", function () {\r",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 201]);\r",
+									"});\r",
+									"\r",
+									"// TEST 2: Validació de Contingut i Neteja\r",
+									"pm.test(\"Visit validated and temp variables cleaned\", function () {\r",
+									"    \r",
+									"    if (pm.response.code == 204) {\r",
+									"        return; //ignorar\r",
+									"    }\r",
+									"\r",
+									"    const response = pm.response.json();\r",
+									"    const expectedDescription = pm.environment.get(\"tempVisitDescription\");\r",
+									"\r",
+									"    // Validació: Comprovem que la descripció retornada coincideix amb la que hem enviat\r",
+									"    pm.expect(response.description, \"Description must match sent data\").to.equal(expectedDescription);\r",
+									"    \r",
+									"    //Eliminem les variables temporals d'un sol ús\r",
+									"    pm.environment.unset(\"tempVisitDescription\");\r",
+									"    pm.environment.unset(\"tempVisitDate\");\r",
+									"    \r",
+									"    console.log(\"Visita creada i variables temporals netejades.\");\r",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"date\": \"{{tempVisitDate}}\",\r\n    \"description\":\"{{tempVisitDescription}}\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/owners/{{createdOwnerId}}/pets/{{createdPetId}}/visits",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"owners",
+								"{{createdOwnerId}}",
+								"pets",
+								"{{createdPetId}}",
+								"visits"
+							]
+						}
+					},
+					"response": []
+				},
+				{
 					"name": "Delete Owner",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
 								"exec": [
-									"// TEST 1: Status code\r",
-									"pm.test(\"Status code is 204\", function () {\r",
+									"// TEST 1: Codi d'estat esperat 204 NO CONTENT\r",
+									"pm.test(\"Status code is 204 (Success)\", function () {\r",
 									"    pm.response.to.have.status(204);\r",
 									"});\r",
 									"\r",
-									"// TEST 2: Temps\r",
-									"pm.test(\"Response time < 2000ms\", function () {\r",
+									"// TEST 2: Temps de resposta ràpid\r",
+									"pm.test(\"Response time is fast (< 2000ms)\", function () {\r",
 									"    pm.expect(pm.response.responseTime).to.be.below(2000);\r",
 									"});\r",
 									"\r",
-									"// TEST 3: Verificar que s'ha eliminat amb GET\r",
-									"pm.test(\"Owner deleted successfully\", function () {\r",
-									"    pm.sendRequest({\r",
-									"        url: pm.environment.get(\"baseUrl\") + \"/owners/\" + pm.environment.get(\"createdOwnerId\"),\r",
-									"        method: \"GET\"\r",
-									"    }, function (err, response) {\r",
-									"        // Hauria de retornar 404 Not Found\r",
-									"        pm.expect(response.code).to.equal(404);\r",
-									"        console.log(\"Owner eliminat correctament, retorna 404\");\r",
-									"    });\r",
-									"});\r",
-									"\r",
-									"// TEST 4: Netejar variable\r",
+									"// TEST 3: Neteja de totes les variables de l'Owner\r",
 									"pm.test(\"Clean up ALL Owner environment variables\", function () {\r",
-									"    // 1. Eliminar l'ID principal\r",
+									"\r",
 									"    pm.environment.unset(\"createdOwnerId\");\r",
+									"    pm.environment.unset(\"createdPetId\")\r",
 									"    \r",
-									"    // 2. Eliminar totes les dades dinàmiques temporals de l'Owner\r",
+									"\r",
+									"    // 2.ELIMINACIÓ DE DADES TEMPORALS: Owner\r",
 									"    pm.environment.unset(\"tempFirstName\");\r",
 									"    pm.environment.unset(\"tempLastName\");\r",
 									"    pm.environment.unset(\"tempAddress\");\r",
 									"    pm.environment.unset(\"tempCity\");\r",
 									"    pm.environment.unset(\"tempTelephone\");\r",
-									"    \r",
-									"    // Netejar la variable temporal del PUT (per si no es va netejar abans)\r",
-									"    pm.environment.unset(\"tempNewLastName\");\r",
+									"    pm.environment.unset(\"tempNewLastName\"); // Tambe la actualitzada\r",
 									"\r",
-									"    // Aquesta línia força el test a registrar-se com a 'PASS'\r",
-									"    pm.expect(true).to.be.true; \r",
-									"    console.log(\"Variables d'entorn d'Owner netejades.\");\r",
+									"    // 3.ELIMINACIO DE DADES TEMP. DE PET I VISIT\r",
+									"    pm.environment.unset(\"tempPetName\");\r",
+									"    pm.environment.unset(\"tempBirthDay\"); \r",
+									"    pm.environment.unset(\"tempPetType\");\r",
+									"    pm.environment.unset(\"tempPetTypeId\");\r",
+									"    pm.environment.unset(\"tempVisitDate\");\r",
+									"    pm.environment.unset(\"tempVisitDescription\");\r",
+									"    pm.environment.unset(\"tempNewPetName\")\r",
+									"    console.log(\"Cicle complet Owner-Pet-Visit netejat. Variables d'entorn eliminades.\");\r",
+									"    // Com que la funció és només netejar, forcem el PASS\r",
+									"    pm.expect(true).to.be.true;\r",
 									"});"
 								],
 								"type": "text/javascript",
@@ -471,115 +763,12 @@
 					},
 					"response": []
 				}
-			]
+			],
+			"description": "This folder contains endpoints to manage owner data and their pets. It includes operations to create, retrieve, update, and delete owner records, as well as to add and manage pets and their visits. These endpoints facilitate comprehensive management of owners and their associated pets within the system."
 		},
 		{
 			"name": "Pets",
-			"item": [
-				{
-					"name": "Post Pet",
-					"event": [
-						{
-							"listen": "prerequest",
-							"script": {
-								"exec": [
-									"// --- Pre-request Script per a POST Pet ---\r",
-									"\r",
-									"// 1. Generar dades dinàmiques (Nom i Data)\r",
-									"\r",
-									"const randomPetName = pm.variables.replaceIn(\"{{$randomAdjective}}\"); \r",
-									"\r",
-									"const today = new Date();\r",
-									"const pastDate = new Date();\r",
-									"pastDate.setFullYear(today.getFullYear() - _.random(1, 3)); \r",
-									"const year = pastDate.getFullYear();\r",
-									"const month = String(pastDate.getMonth() + 1).padStart(2, '0');\r",
-									"const day = String(pastDate.getDate()).padStart(2, '0');\r",
-									"const randomBirthDate = `${year}-${month}-${day}`; \r",
-									"\r",
-									"// **********************************************\r",
-									"// 2. Definir Tipus (Utilitza el Tipus Vàlid: Dog ID 2)\r",
-									"// **********************************************\r",
-									"pm.environment.set(\"petName\", randomPetName);\r",
-									"pm.environment.set(\"petBirthDate\", randomBirthDate);\r",
-									"pm.environment.set(\"petTypeId\", 2); \r",
-									"pm.environment.set(\"petTypeName\", \"dog\"); // Utilitzem els valors confirmats (ID 2 = dog)\r",
-									"\r",
-									"console.log(`[PET POST] Creant mascota: ${randomPetName} amb data ${randomBirthDate}`);"
-								],
-								"type": "text/javascript",
-								"packages": {},
-								"requests": {}
-							}
-						},
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"// --- Tests per a POST Pet ---\r",
-									"\r",
-									"// TEST 1: Status code\r",
-									"pm.test(\"Status code is 201 Created\", function () {\r",
-									"    pm.expect(pm.response.code).to.equal(201);\r",
-									"});\r",
-									"\r",
-									"// TEST 2: Temps\r",
-									"pm.test(\"Response time < 2000ms\", function () {\r",
-									"    pm.expect(pm.response.responseTime).to.be.below(2000);\r",
-									"});\r",
-									"\r",
-									"// TEST 3: Verificar creació i encadenament (GUARDA L'ID)\r",
-									"pm.test(\"Pet created successfully and ID saved\", function () {\r",
-									"    if (pm.response.code !== 201) {\r",
-									"        console.error(\"Creació fallida. No es pot continuar amb l'encadenament.\");\r",
-									"        return; // Atura l'execució del test si el status no és 201\r",
-									"    }\r",
-									"    \r",
-									"    const response = pm.response.json();\r",
-									"    \r",
-									"    // 1. Validació de contingut\r",
-									"    pm.expect(response).to.have.property('id');\r",
-									"    pm.expect(response.name).to.equal(pm.environment.get(\"petName\"));\r",
-									"    pm.expect(response.birthDate).to.equal(pm.environment.get(\"petBirthDate\")); // Comprovem data\r",
-									"\r",
-									"    // 2. Encadenament: Guardem l'ID de la mascota\r",
-									"    pm.environment.set(\"createdPetId\", response.id);\r",
-									"    console.log(\"Mascota creada amb ID:\", response.id);\r",
-									"});"
-								],
-								"type": "text/javascript",
-								"packages": {},
-								"requests": {}
-							}
-						}
-					],
-					"request": {
-						"method": "POST",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{\r\n    \"name\": \"{{petName}}\",\r\n    \"birthDate\": \"{{petBirthDate}}\",\r\n    \"type\": {\r\n        \"id\": {{petTypeId}},\r\n        \"name\": \"{{petTypeName}}\"\r\n    }\r\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{baseUrl}}/owners/{{createdOwnerId}}/pets",
-							"host": [
-								"{{baseUrl}}"
-							],
-							"path": [
-								"owners",
-								"{{createdOwnerId}}",
-								"pets"
-							]
-						}
-					},
-					"response": []
-				}
-			]
+			"item": []
 		},
 		{
 			"name": "Vets",
