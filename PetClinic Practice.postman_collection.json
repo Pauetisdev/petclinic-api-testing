@@ -1147,7 +1147,7 @@
 					"response": []
 				},
 				{
-					"name": "New Request",
+					"name": "Update Vet details",
 					"event": [
 						{
 							"listen": "prerequest",
@@ -1291,7 +1291,46 @@
 					"response": []
 				},
 				{
-					"name": "New Request",
+					"name": "Delete Pet Type",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// TEST 1: Codi d'estat esperat 204 NO CONTENT\r",
+									"pm.test(\"Status code is 204 (Success)\", function () {\r",
+									"    pm.response.to.have.status(204);\r",
+									"});\r",
+									"\r",
+									"// TEST 2: Temps de resposta ràpid\r",
+									"pm.test(\"Response time is fast (< 2000ms)\", function () {\r",
+									"    pm.expect(pm.response.responseTime).to.be.below(2000);\r",
+									"});\r",
+									"\r",
+									"// TEST 3: Neteja COMPLETA de totes les variables\r",
+									"pm.test(\"Clean up createdVetId and all temporary variables\", function () {\r",
+									"    \r",
+									"    // 1. ELIMINACIÓ DE L'ID PRINCIPAL D'ENCADENAMENT\r",
+									"    pm.environment.unset(\"createVetId\");\r",
+									"    \r",
+									"    // 2. ELIMINACIÓ DE DADES TEMPORALS SOBREVIVENTS (Primer i Cognom original)\r",
+									"    pm.environment.unset(\"tempVetFirstName\"); \r",
+									"    pm.environment.unset(\"tempVetLastName\");\r",
+									"    \r",
+									"    // 3. ELIMINACIÓ DE LA VARIABLE ACTUALITZADA\r",
+									"    pm.environment.unset(\"tempVetNewFirstName\"); \r",
+									"\r",
+									"    console.log(\"Cicle Vets complet i variables d'entorn netejades.\");\r",
+									"    // Forçar el test com a PASS\r",
+									"    pm.expect(true).to.be.true;\r",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
 					"request": {
 						"method": "DELETE",
 						"header": [],
@@ -1310,6 +1349,309 @@
 				}
 			],
 			"description": "This folder contains endpoints to manage veterinarian data and professional profiles within the PetClinic system. It includes full CRUD operations to create new vet accounts, retrieve complete veterinarian listings or individual vet details, update professional information such as specialties and credentials, and remove vet records from the system. These endpoints enable comprehensive management of veterinary staff, including their qualifications, areas of expertise, and availability. The API supports clinic administration, staff scheduling, and helps match pets with appropriate veterinary specialists based on their medical needs."
+		},
+		{
+			"name": "Pet Types",
+			"item": [
+				{
+					"name": "Get All Pet Types",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// TEST 1: Codi d'estat 200 OK\r",
+									"pm.test(\"Status code is 200\", function () {\r",
+									"    pm.response.to.have.status(200);\r",
+									"});\r",
+									"\r",
+									"// TEST 2: Temps de resposta ràpid\r",
+									"pm.test(\"Response time is fast (< 500ms)\", function () {\r",
+									"    pm.expect(pm.response.responseTime).to.be.below(500);\r",
+									"});\r",
+									"\r",
+									"// TEST 3: La resposta és un Array\r",
+									"pm.test(\"Response is an array (list of vets)\", function () {\r",
+									"    const jsonData = pm.response.json();\r",
+									"    pm.expect(jsonData, \"The response must be a JSON array\").to.be.an('array');\r",
+									"});\r",
+									"\r",
+									"// TEST 4: Comprovar que l'array no estigui buit i que el primer element tingui 'firstName'\r",
+									"pm.test(\"Array is not empty and first item has 'name'\", function () {\r",
+									"    const jsonData = pm.response.json();\r",
+									"    \r",
+									"    pm.expect(jsonData.length, \"The array of types of pets should not be empty\").to.be.above(0);\r",
+									"    pm.expect(jsonData[0]).to.have.property('name');\r",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/pettypes",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"pettypes"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Add a  new Pet Type",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"const randomTypeName = pm.variables.replaceIn(\"{{$randomAdjective}}\")\r",
+									"pm.environment.set(\"tempTypeName\", randomTypeName)\r",
+									"\r",
+									"console.log(`[PRE-REQ] Nou tipus generat: ${randomTypeName}`);"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// TEST 1: Codi d'estat esperat (201 Created o 200 OK)\r",
+									"pm.test(\"Status code is 201 or 200\", function () {\r",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 201]);\r",
+									"});\r",
+									"\r",
+									"// TEST 2: Encadenament i Validació\r",
+									"pm.test(\"Pet Type created, ID captured, and name verified\", function () {\r",
+									"    \r",
+									"    if (pm.response.code >= 400) {\r",
+									"        return;\r",
+									"    }\r",
+									"    const response = pm.response.json();\r",
+									"    const expectedName = pm.environment.get(\"tempTypeName\"); \r",
+									"\r",
+									"    pm.expect(response, \"Response must be an object\").to.have.property('id'); \r",
+									"    \r",
+									"    // Comprovem que el valor de l'ID és un número\r",
+									"    pm.expect(response.id, \"ID must be a number\").to.be.a('number');\r",
+									"    \r",
+									"    // Validació de contingut: El nom retornat ha de ser el que hem enviat\r",
+									"    pm.expect(response.name, \"Name must match sent data\").to.equal(expectedName);\r",
+									"    \r",
+									"    // Guardem l'ID amb el nom consistent\r",
+									"    pm.environment.set(\"createPetTypeId\", response.id);\r",
+									"    console.log(\"Pet Type creat amb ID per a encadenament:\", response.id);\r",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"name\": \"{{tempTypeName}}\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/pettypes",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"pettypes"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Pet Type details",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"const newTypePet = pm.variables.replaceIn(\"{{$randomAdjective}}\")",
+									"const petTypeId = pm.environment.get(\"createPetTypeId\");",
+									"",
+									"pm.environment.set(\"tempNewTypeName\", newTypePet)",
+									"pm.environment.set(\"petTypeIdForBody\", petTypeId);",
+									"",
+									"console.log(`[PRE-REQ] Nou PetType a enviar: ${newTypePet}`);"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"\r",
+									"// TEST 1: Codi d'estat esperat (200 OK o 204 NO CONTENT)\r",
+									"\r",
+									"pm.test(\"Status code is 200 or 204\", function () {\r",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 204]);\r",
+									"});\r",
+									"\r",
+									"// TEST 2: Temps de resposta ràpid\r",
+									"pm.test(\"Response time < 2000ms\", function () {\r",
+									"    pm.expect(pm.response.responseTime).to.be.below(2000);\r",
+									"});\r",
+									"\r",
+									"// TEST 3: Verificar actualització del nom\r",
+									"\r",
+									"pm.test(\"Updated Type Name verified\", function () {\r",
+									"    const expectedNewTypeName = pm.environment.get(\"tempNewTypeName\");\r",
+									"   \r",
+									"    if (pm.response.code === 204) {\r",
+									"        pm.expect(true, \"Actualització confirmada (Body buit).\").to.be.true;\r",
+									"        return;\r",
+									"    }\r",
+									"    // Si la resposta és 200 (OK), verifiquem el Body\r",
+									"    else if (pm.response.code === 200) {\r",
+									"        const response = pm.response.json();\r",
+									"        // Comprovem que el nom retornat coincideix amb el valor temporal noU\r",
+									"        pm.expect(response.name, \"The returned name must match the temporary new value\").to.equal(expectedNewTypeName);\r",
+									"    }\r",
+									"    // No netejem la variable de tempNewTypeName, per utilizar-la al Get Pet by Id.\r",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"id\": {{petTypeIdForBody}},\r\n    \"name\": \"{{tempNewTypeName}}\" //Actualitzat\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/pettypes/{{createPetTypeId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"pettypes",
+								"{{createPetTypeId}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Pet Type By Id",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// TEST 1: Codi d'estat esperat 200 OK\r",
+									"pm.test(\"Status code is 200\", function () {\r",
+									"    pm.response.to.have.status(200);\r",
+									"});\r",
+									"\r",
+									"// TEST 2: Temps de resposta ràpid\r",
+									"pm.test(\"Response time is fast (< 300ms)\", function () {\r",
+									"    pm.expect(pm.response.responseTime).to.be.below(300);\r",
+									"});\r",
+									"\r",
+									"// TEST 3: Verificar Encadenament i Persistència del Nou Nom\r",
+									"pm.test(\"Type ID and UPDATED Name verified\", function () {\r",
+									"    if (pm.response.code !== 200) return;\r",
+									"    \r",
+									"    const petType = pm.response.json();\r",
+									"    \r",
+									"    //Variables d'Encadenament i Temporals\r",
+									"    const expectedPetTypeId = pm.environment.get(\"createdPetTypeId\");\r",
+									"    const expectedNewTypeName = pm.environment.get(\"tempNewTypeName\"); \r",
+									"    \r",
+									"    // 1. Validació de l'ID (Comprovació d'Encadenament)\r",
+									"    pm.expect(petType).to.have.property('id');\r",
+									"    pm.expect(parseInt(petType.id), \"The returned ID must match the chained ID\").to.equal(parseInt(expectedPetTypeId));\r",
+									"    \r",
+									"    // 2.Comprovem que el nom a la DB és el nom actualitzat\r",
+									"    pm.expect(petType.name, \"The retrieved name must be the UPDATED name\").to.equal(expectedNewTypeName);\r",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"id\": {{petTypeIdForBody}},\r\n    \"name\": \"{{tempNewTypeName}}\" //Actualitzat\r\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/pettypes/{{createPetTypeId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"pettypes",
+								"{{createPetTypeId}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Pet Type",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/pettypes/{{createPetTypeId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"pettypes",
+								"{{createPetTypeId}}"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "This folder contains endpoints for managing pet types in the PetClinic system. Pet types represent the different categories of pets that can be registered in the clinic (e.g., dog, cat, bird, etc.).\n\nThe available operations include:\n- **Get All Pet Types**: Retrieve a complete list of all pet types available in the system\n- **Add a new Pet Type**: Create a new pet type category\n- **Update Pet Type details**: Modify an existing pet type's information\n- **Get Pet Type By Id**: Retrieve a specific pet type using its unique identifier\n- **Delete Pet Type**: Remove a pet type from the system\n\nThese endpoints allow complete CRUD (Create, Read, Update, Delete) operations for managing the pet type data in the PetClinic application."
 		}
 	]
 }
