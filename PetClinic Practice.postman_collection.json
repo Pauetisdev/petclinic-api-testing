@@ -548,9 +548,9 @@
 									"    pm.expect(pm.response.responseTime).to.be.below(2000);\r",
 									"});\r",
 									"\r",
-									"// TEST 3: Verificar que l'objecte Mascota existeix i té ID (CORREGIT)\r",
+									"// TEST 3: Verificar que l'objecte Mascota existeix i té ID\r",
 									"pm.test(\"Response is a valid Pet object with ID\", function () {\r",
-									"    // ⚠️ Si el Test 1 falla amb 404, no intentem llegir el JSON\r",
+									"    //Si el Test 1 falla amb 404, no intentem llegir el JSON\r",
 									"    if (pm.response.code !== 200) {\r",
 									"        return; \r",
 									"    }\r",
@@ -1592,7 +1592,7 @@
 									"    const petType = pm.response.json();\r",
 									"    \r",
 									"    //Variables d'Encadenament i Temporals\r",
-									"    const expectedPetTypeId = pm.environment.get(\"createdPetTypeId\");\r",
+									"    const expectedPetTypeId = pm.environment.get(\"createPetTypeId\");\r",
 									"    const expectedNewTypeName = pm.environment.get(\"tempNewTypeName\"); \r",
 									"    \r",
 									"    // 1. Validació de l'ID (Comprovació d'Encadenament)\r",
@@ -1634,6 +1634,45 @@
 				},
 				{
 					"name": "Delete Pet Type",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// TEST 1: Codi d'estat esperat 204 NO CONTENT\r",
+									"pm.test(\"Status code is 204 (Success)\", function () {\r",
+									"    pm.response.to.have.status(204);\r",
+									"});\r",
+									"\r",
+									"// TEST 2: Temps de resposta ràpid\r",
+									"pm.test(\"Response time is fast (< 2000ms)\", function () {\r",
+									"    pm.expect(pm.response.responseTime).to.be.below(2000);\r",
+									"});\r",
+									"\r",
+									"// TEST 3: Neteja COMPLETA de totes les variables\r",
+									"pm.test(\"Clean up createPetTypeId and all temporary variables\", function () {\r",
+									"    \r",
+									"    // 1. ELIMINACIÓ DE L'ID PRINCIPAL D'ENCADENAMENT\r",
+									"    pm.environment.unset(\"createPetTypeId\");\r",
+									"    \r",
+									"    // 2. ELIMINACIÓ DE DADES TEMPORALS SOBREVIVENTS (Primer i Cognom original)\r",
+									"    pm.environment.unset(\"petTypeIdForBody\");\r",
+									"    pm.environment.unset(\"tempTypeName\"); \r",
+									"    \r",
+									"    // 3. ELIMINACIÓ DE LA VARIABLE ACTUALITZADA\r",
+									"    pm.environment.unset(\"tempNewTypeName\");  \r",
+									"\r",
+									"    console.log(\"Cicle PetType complet i variables d'entorn netejades.\");\r",
+									"    // Forçar el test com a PASS\r",
+									"    pm.expect(true).to.be.true;\r",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
 					"request": {
 						"method": "DELETE",
 						"header": [],
@@ -1652,6 +1691,357 @@
 				}
 			],
 			"description": "This folder contains endpoints for managing pet types in the PetClinic system. Pet types represent the different categories of pets that can be registered in the clinic (e.g., dog, cat, bird, etc.).\n\nThe available operations include:\n- **Get All Pet Types**: Retrieve a complete list of all pet types available in the system\n- **Add a new Pet Type**: Create a new pet type category\n- **Update Pet Type details**: Modify an existing pet type's information\n- **Get Pet Type By Id**: Retrieve a specific pet type using its unique identifier\n- **Delete Pet Type**: Remove a pet type from the system\n\nThese endpoints allow complete CRUD (Create, Read, Update, Delete) operations for managing the pet type data in the PetClinic application."
+		},
+		{
+			"name": "Visits",
+			"item": [
+				{
+					"name": "Get All Visits",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// TEST 1: Codi d'estat 200 OK\r",
+									"pm.test(\"Status code is 200\", function () {\r",
+									"    pm.response.to.have.status(200);\r",
+									"});\r",
+									"\r",
+									"// TEST 2: Temps de resposta ràpid\r",
+									"pm.test(\"Response time is fast (< 500ms)\", function () {\r",
+									"    pm.expect(pm.response.responseTime).to.be.below(500);\r",
+									"});\r",
+									"\r",
+									"// TEST 3: La resposta és un Array\r",
+									"pm.test(\"Response is an array (list of vets)\", function () {\r",
+									"    const jsonData = pm.response.json();\r",
+									"    pm.expect(jsonData, \"The response must be a JSON array\").to.be.an('array');\r",
+									"});\r",
+									"\r",
+									"// TEST 4: Comprovar que l'array no estigui buit i que el primer element tingui 'firstName'\r",
+									"pm.test(\"Array is not empty and first item has 'name'\", function () {\r",
+									"    const jsonData = pm.response.json();\r",
+									"    \r",
+									"    pm.expect(jsonData.length, \"The array of types of pets should not be empty\").to.be.above(0);\r",
+									"    pm.expect(jsonData[0]).to.have.property('date');\r",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/visits",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"visits"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Add new Visit",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"const visitDate = \"2025-01-01\"\r",
+									"const randomDescription = pm.variables.replaceIn(\"{{$randomCatchPhrase}}\")\r",
+									"\r",
+									"// Agafar el ID de la mascota\r",
+									"const petId = pm.environment.get(\"createdPetId\")\r",
+									"\r",
+									"pm.environment.set(\"tempVisitDate\", visitDate)\r",
+									"pm.environment.set(\"tempDescription\", randomDescription)\r",
+									"pm.environment.set(\"petIDforVisit\", petId)\r",
+									"\r",
+									"console.log(`[PRE-REQ] Nueva Visita para Pet ID ${petId}: ${visitDate} - ${randomDescription}`);"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// TEST 1: Codi d'estat esperat (201 Created o 200 OK)\r",
+									"pm.test(\"Status code is 201 or 200\", function () {\r",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 201]);\r",
+									"});\r",
+									"\r",
+									"// TEST 2: Encadenament i Validació\r",
+									"pm.test(\"Visit Created\", function () {\r",
+									"    \r",
+									"    if (pm.response.code >= 400) {\r",
+									"        return; \r",
+									"    }\r",
+									"\r",
+									"    const response = pm.response.json();\r",
+									"    \r",
+									"    const expectedDescription = pm.environment.get(\"tempDescription\");\r",
+									"    const expectedPetId = pm.environment.get(\"petIDforVisit\");\r",
+									"    \r",
+									"    // 1. Validació d'estructura i ID\r",
+									"    pm.expect(response, \"Response must be an object\").to.have.property('id');\r",
+									"    pm.expect(response.id, \"ID must be a number\").to.be.a('number');\r",
+									"    \r",
+									"    // 2. Validació de contingut: Comprovem que les dades coincideixen\r",
+									"    pm.expect(response.description, \"Description must match sent data\").to.equal(expectedDescription);\r",
+									"    pm.expect(response.petId, \"Pet Id must match sent data\").to.equal(expectedPetId);\r",
+									"    \r",
+									"    // Encadenament: Desem l'ID de la nova Mascota\r",
+									"    pm.environment.set(\"createVisitId\", response.id);\r",
+									"    console.log(\"Visit creada amb ID per a encadenament:\", response.id);\r",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"date\": \"{{tempVisitDate}}\",\r\n    \"description\": \"{{tempDescription}}\",\r\n    \"petId\": \"{{petIDforVisit}}\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/visits",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"visits"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Visit",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"const tempNewDescription = pm.variables.replaceIn(\"{$randomCatchPhrase}\")\r",
+									"\r",
+									"pm.environment.set(\"tempNewDescription\", tempNewDescription)\r",
+									"\r",
+									"console.log(`[PRE-REQ] Nova Descripció a enviar: ${tempNewDescription}`);"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// TEST 1: Codi d'estat esperat (200 OK o 204 NO CONTENT)\r",
+									"pm.test(\"Status code is 200 or 204\", function () {\r",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 204]);\r",
+									"});\r",
+									"\r",
+									"// TEST 2: Temps de resposta ràpid\r",
+									"pm.test(\"Response time < 2000ms\", function () {\r",
+									"    pm.expect(pm.response.responseTime).to.be.below(2000);\r",
+									"});\r",
+									"\r",
+									"// TEST 3: Verificar que la descripcio s'ha actualitzat (si el backend retorna body)\r",
+									"pm.test(\"New Pet Name updated successfully (from response body)\", function () {\r",
+									"    if (pm.response.code !== 200) {\r",
+									"        // Si és 204 (No Content), no hi ha body per comprovar.\r",
+									"        return; \r",
+									"    }\r",
+									"    \r",
+									"    const response = pm.response.json();\r",
+									"    const expectedDescription = pm.environment.get(\"tempNewDescription\")\r",
+									"\r",
+									"    // Comprovar que el nom tornat coincideix amb el que hem enviat\r",
+									"    pm.expect(response.description).to.equal(expectedDescription);\r",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"date\": \"{{tempVisitDate}}\",\r\n    \"description\": \"{{tempNewDescription}}\",\r\n    \"petId\": \"{{petIDforVisit}}\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/visits/{{createVisitId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"visits",
+								"{{createVisitId}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Visit by Id",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {\r",
+									"    pm.response.to.have.status(200);\r",
+									"});\r",
+									"\r",
+									"pm.test(\"Response time < 2000ms\", function () {\r",
+									"    pm.expect(pm.response.responseTime).to.be.below(2000);\r",
+									"});\r",
+									"\r",
+									"// TEST 3: Verificar que l'objecte visit existeix i té ID\r",
+									"pm.test(\"Response is a valid Pet object with ID\", function () {\r",
+									"    //Si el Test 1 falla amb 404, no intentem llegir el JSON\r",
+									"    if (pm.response.code !== 200) {\r",
+									"        return; \r",
+									"    }\r",
+									"    \r",
+									"    const visit = pm.response.json();\r",
+									"    \r",
+									"    // 1. Validació d'estructura (Correcció)\r",
+									"    // Utilitzem 'to.have.property' només per comprovar que la clau existeix.\r",
+									"    pm.expect(visit, \"Response must be an object\").to.be.an('object');\r",
+									"\r",
+									"    //Comprovem que l'ID existeix\r",
+									"    pm.expect(visit, 'The visit object must contain an ID').to.have.property('id');\r",
+									"    \r",
+									"    //Comprovem que el nom existeix\r",
+									"    pm.expect(visit, 'The visit object must contain a description').to.have.property('description');\r",
+									"    \r",
+									"    // 2. Validació d'Encadenament: Comprovar que l'ID retornat coincideix amb el capturat.\r",
+									"    const expectedVisitId = pm.environment.get(\"createVisitId\");\r",
+									"    \r",
+									"    if (expectedVisitId) {\r",
+									"        // Assegurar que el valor de l'ID retornat sigui igual al que vam capturar (encadenament)\r",
+									"        pm.expect(visit.id, \"The returned ID must match the createdPetId\").to.equal(parseInt(expectedVisitId));\r",
+									"    }\r",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/visits/{{createVisitId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"visits",
+								"{{createVisitId}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Visit",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// TEST 1: Codi d'estat esperat 204 NO CONTENT\r",
+									"pm.test(\"Status code is 204 (Success)\", function () {\r",
+									"    pm.response.to.have.status(204);\r",
+									"});\r",
+									"\r",
+									"// TEST 2: Temps de resposta ràpid\r",
+									"pm.test(\"Response time is fast (< 2000ms)\", function () {\r",
+									"    pm.expect(pm.response.responseTime).to.be.below(2000);\r",
+									"});\r",
+									"\r",
+									"// TEST 3: Neteja de totes les variables de Visit\r",
+									"pm.test(\"Clean up ALL Visit environment variables\", function () {\r",
+									"\r",
+									"    pm.environment.unset(\"createVisitId\"); // important\r",
+									"\r",
+									"    // 2.ELIMINACIÓ DE DADES TEMPORALS: Visit\r",
+									"    pm.environment.unset(\"tempVisitDate\");\r",
+									"    pm.environment.unset(\"tempDescription\");\r",
+									"\r",
+									"    pm.environment.unset(\"tempNewDescription\"); // Tambe la actualitzada\r",
+									"\r",
+									"    // 3.ELIMINACIO DE DADES TEMP. DE PET I VISIT\r",
+									"    pm.environment.unset(\"tempPetName\");\r",
+									"    pm.environment.unset(\"tempBirthDay\"); \r",
+									"    pm.environment.unset(\"tempPetType\");\r",
+									"    pm.environment.unset(\"tempPetTypeId\");\r",
+									"    pm.environment.unset(\"tempVisitDate\");\r",
+									"    pm.environment.unset(\"tempVisitDescription\");\r",
+									"    pm.environment.unset(\"tempNewPetName\")\r",
+									"    console.log(\"Cicle complet Visit netejat. Variables d'entorn eliminades.\");\r",
+									"    // Com que la funció és només netejar, forcem el PASS\r",
+									"    pm.expect(true).to.be.true;\r",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/visits/{{createVisitId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"visits",
+								"{{createVisitId}}"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "# Visits\n\nManage pet clinic visits with full CRUD operations.\n\n## Endpoints\n\n**Get All Visits** - `GET {{baseUrl}}/visits`  \nRetrieve all visit records.\n\n**Add new Visit** - `POST {{baseUrl}}/visits`  \nCreate a new visit record.\n\n**Update Visit** - `PUT {{baseUrl}}/visits/{{createVisitId}}`  \nModify an existing visit.\n\n**Get Visit by Id** - `GET {{baseUrl}}/visits/{{createVisitId}}`  \nRetrieve a specific visit by ID.\n\n**Delete Visit** - `DELETE {{baseUrl}}/visits/{{createVisitId}}`  \nRemove a visit record.\n\n## Notes\n\n- Use `{{createVisitId}}` variable for visit-specific operations\n    \n- Configure `{{baseUrl}}` in your environment"
 		}
 	]
 }
