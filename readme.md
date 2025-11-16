@@ -170,6 +170,5 @@ This project inherits the primary repository license (see `LICENSE.txt`).
 If you want, I can:
 - Generate a sample `postman_environment.json` with the required variables.
 - Add additional Pre-request / Test examples for negative cases or edge scenarios.
-- Create an English `README_en.md` file (this file is already in English; I can also produce a Spanish translation if needed).
 
 Tell me which of the options above you want me to add next and I will implement it.
